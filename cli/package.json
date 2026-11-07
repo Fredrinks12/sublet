@@ -1,0 +1,16 @@
+{
+  "name": "sublet-cli",
+  "version": "0.1.0",
+  "description": "Rent out or rent a Linux machine by the minute, from a NEAR contract.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "sublet": "bin/sublet.js" },
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "near-api-js": "^7.4.0",
+    "viem": "^2.0.0"
+  }
+}
