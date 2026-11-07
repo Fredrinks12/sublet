@@ -1,16 +1,17 @@
 {
-  "contract": "cmw6hm1bu.sublet-dev-0ekmh.testnet",
-  "run_at": "2026-11-07T14:21:58.624Z",
+  "contract": "sublet.testnet",
+  "run_at": "2026-11-07T15:16:39.026Z",
   "network": "testnet",
-  "stopped": 31,
-  "total": 31,
+  "stopped": 37,
+  "total": 37,
   "results": [
     {
       "attack": "Pay less than the rent",
       "expected": "E_UNDERPAID",
       "result": "E_UNDERPAID",
       "stopped": true,
-      "tx": "CiMD6Ee5UXKut6iE2YmgTVUQNJ7mXTGC4AzdkBXUcEjN",
+      "tx": "FTmeutWh2gm4Njr36b78msz8JRVTxtdc9jzipUQdKsdf",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -18,7 +19,8 @@
       "expected": "E_BAD_TICKS",
       "result": "E_BAD_TICKS",
       "stopped": true,
-      "tx": "2PisiugTzYQRtdRc7RWP1bkAhJrUqohxtmUAWQtggdMV",
+      "tx": "CArKF8DAVE9sEMJJwVDF6A1aVrXckqgTYdzDAJSCbaj",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -26,7 +28,8 @@
       "expected": "E_PAUSED",
       "result": "E_PAUSED",
       "stopped": true,
-      "tx": "8dKX57doVEQruQRQnFi44aicfEnc52qpBn6cuGrP1e7V",
+      "tx": "JD8vZcuykXhvu7QR6QzJooD6L2MpjoEamQRe1oEJjgb1",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -34,7 +37,8 @@
       "expected": "E_NOT_ALLOWED",
       "result": "E_NOT_ALLOWED",
       "stopped": true,
-      "tx": "7x7BLuxNmM4w57mAAkx3oDrEPSNDWvPACZXTEwsSxw9z",
+      "tx": "DEShWmmn5FN8Fgya6GvUu1Vy3JaNviDQt9V75eBNCEmu",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -42,7 +46,8 @@
       "expected": "E_BAD_SOURCE_ADDRESS",
       "result": "E_BAD_SOURCE_ADDRESS",
       "stopped": true,
-      "tx": "FPfGEuYwDGfi9Z8yqmtvZz4AYY3ADk5SQSNmFJN15iNt",
+      "tx": "3tBdL64262k8WNz5wTWnniKMcdnWiqmctDrCpqQ5PdMo",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -50,7 +55,8 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "CAWRzejXWYrigXDF3x5sVZKUFogxK7HwJ617rAAzcXDw",
+      "tx": "9raSUBxGMEJXYgfhLx4NCzpXqbDWsffBtEDMKzvuvPde",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -58,7 +64,8 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "26YmpEG5jkxS2VNeSKy5JyRXSN94Q1sT666SYgTQB7Yp",
+      "tx": "HnLzUbBafJoCRsKQB9gQH8RFMWD744EVZoNTNJ6wEYMQ",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -66,7 +73,8 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "AuSCjxoDe4MC94TjcMMnK5dBFNnEYMrNa4NkUTkPpR3e",
+      "tx": "2cpeoUVy8sKjyUYAWk6cjjXDamxNLm5aC4acDNbf1Qy1",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -74,7 +82,8 @@
       "expected": "E_UNIT_EXISTS",
       "result": "E_UNIT_EXISTS",
       "stopped": true,
-      "tx": "CKVMeAhxAutLvdgjrgF3zxqpqSkDghKkzhH371Y87bT1",
+      "tx": "GxkT8uxpjwiaQPCFaXYndjeonvaQDUzFhoRYKtwBM8wv",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -82,7 +91,8 @@
       "expected": "E_ROOT_NOT_ALLOWED",
       "result": "E_ROOT_NOT_ALLOWED",
       "stopped": true,
-      "tx": "4RvyYMBjDsSCKKfkV1F28NJUfChNR4cC5LsfnmHsRAi5",
+      "tx": "8wybSfirzp53oCt1dHga4svUtU29fQZPaEx6KnDANK8F",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -90,7 +100,35 @@
       "expected": "E_USER_ALREADY_LISTED",
       "result": "E_USER_ALREADY_LISTED",
       "stopped": true,
-      "tx": "H883VUWBfMYnFZ2gas3fvQzMqkRudXUVThAcoCJEUg3N",
+      "tx": "Am68cmWdK4UGfrAq81RQqTbUngSDp1fuGf4LeFhcyckD",
+      "signer": "sublet-owner-0ekmh.testnet",
+      "note": null
+    },
+    {
+      "attack": "Hide a shell command in a server address, for a visitor to paste",
+      "expected": "E_BAD_HOST",
+      "result": "E_BAD_HOST",
+      "stopped": true,
+      "tx": "BtpPoXuLm46Dtz7BR3gt6Dgpny3srPxHitpbKxgS3Gay",
+      "signer": "lk-spike-iv2ae4.testnet",
+      "note": null
+    },
+    {
+      "attack": "Hide an ssh option in a Unix user name",
+      "expected": "E_BAD_PRINCIPAL",
+      "result": "E_BAD_PRINCIPAL",
+      "stopped": true,
+      "tx": "2uDwMvZhefTkUVV8HGtNhgLdTe1Njmgn4Ft1K63QP5TF",
+      "signer": "lk-spike-iv2ae4.testnet",
+      "note": null
+    },
+    {
+      "attack": "Hide terminal escape codes in a listing",
+      "expected": "E_BAD_TITLE",
+      "result": "E_BAD_TITLE",
+      "stopped": true,
+      "tx": "AVHviZ7EsEzyr9wp1udnA7te4txKix4H2BkL5Rmtqets",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -98,7 +136,8 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "8TxSmTekswxhZZNzkGcBuwwqHMUEoZZuZ8EjnQMmHEgd",
+      "tx": "43TbHX34zT5GSNhLqCurAMfsXjfGYKaeV3ZCQ1RMxNp4",
+      "signer": "sublet-tenant-0ekmh.testnet",
       "note": null
     },
     {
@@ -106,7 +145,8 @@
       "expected": "E_NOT_TENANT",
       "result": "E_NOT_TENANT",
       "stopped": true,
-      "tx": "8sqs3q8zNKDDdhbFZktRCKdjKhAcmF8bX6fkJKKewHzQ",
+      "tx": "C2LTygejzQ4BFb5gAMVA51RP2PKuKETWBkSsQxgxUbhd",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -114,7 +154,8 @@
       "expected": "Method on_signed is private",
       "result": "Method on_signed is private",
       "stopped": true,
-      "tx": "2rTrdeNWmmkjuLAtbmX3kEABNT81Tgj8UBUZMxKQsx7E",
+      "tx": "CWdx8Gfod8WjiBHwN5bD3Grqg1u7gqJaSM9vVAwTJ48U",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -122,7 +163,8 @@
       "expected": "E_WRONG_PAYER",
       "result": "E_WRONG_PAYER",
       "stopped": true,
-      "tx": "3V6Y8iButFP4ga7CUJgp1its9pDTjC9pe9PWGZioPfZ2",
+      "tx": "GqdzhqWmsRBC3uKau32v2d2JUQeSBCYBWnCRgSoL8kTQ",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -130,7 +172,8 @@
       "expected": "E_WRONG_TOKEN",
       "result": "E_WRONG_TOKEN",
       "stopped": true,
-      "tx": "8mzZtpouTQWWEegRSoVyNZPwXFYxGrj5anVu13i3pqkj",
+      "tx": "7eGis756HvY4eMZghVa8dR6KxhdTBYm73NxmQkph5h5Z",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -138,7 +181,8 @@
       "expected": "E_WRONG_RECIPIENT",
       "result": "E_WRONG_RECIPIENT",
       "stopped": true,
-      "tx": "xsBH9jAeaKMksUwpYVSdfXxXvxDTgR54ebJN8DAZrGk",
+      "tx": "4BkLHz6HxW2bV5L1zvDx9x5BwUSMdDxWz31sP43Sd57A",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -146,7 +190,8 @@
       "expected": "E_NOT_A_TRANSFER",
       "result": "E_NOT_A_TRANSFER",
       "stopped": true,
-      "tx": "GGCXL4stgs9M7QHksKqFsNDKP23LU5BDXtGGfqfUyKfv",
+      "tx": "9uTSg5HMWacRbyEFfAcNheCDXm88NB6wNQVxDLe5iB2u",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -154,7 +199,17 @@
       "expected": "E_CHAIN_NOT_ACCEPTED",
       "result": "E_CHAIN_NOT_ACCEPTED",
       "stopped": true,
-      "tx": "5RRTfmCNGFRy3K1nBkE5fM4CNcVoRJxskCid6Z8D1x9B",
+      "tx": "F57jf2UHTubNsadB7HZKDSVFivQSRJnvQFtr1rdRUmg",
+      "signer": "lk-spike-iv2ae4.testnet",
+      "note": null
+    },
+    {
+      "attack": "Rent a machine priced on Base for free through NEAR",
+      "expected": "E_PAY_ON_ANOTHER_CHAIN",
+      "result": "E_PAY_ON_ANOTHER_CHAIN",
+      "stopped": true,
+      "tx": "Bt8J3SeknnbShEpR2SQXphAc6429q4R5ULcCqsAr8b5a",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -163,6 +218,7 @@
       "result": "Permission denied",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -170,7 +226,8 @@
       "expected": "E_OCCUPIED",
       "result": "E_OCCUPIED",
       "stopped": true,
-      "tx": "7AydPBsn2ytpDg5RR8DE8AHZVg2CL5pXDqqAbPS9dvhR",
+      "tx": "ZG4BRWRWpEZGaDyL6ZArAwXcauTq3spyd1ikvbXVRN8",
+      "signer": "lk-spike-iv2ae4.testnet",
       "note": null
     },
     {
@@ -179,6 +236,7 @@
       "result": "Permission denied",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -187,6 +245,7 @@
       "result": "Permission denied",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -195,6 +254,7 @@
       "result": "Permission denied",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -203,6 +263,7 @@
       "result": "Forwarding refused",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -211,6 +272,7 @@
       "result": "Forwarding refused",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -219,6 +281,7 @@
       "result": "The owner's command ran instead",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -227,6 +290,7 @@
       "result": "The owner's command ran instead",
       "stopped": true,
       "tx": null,
+      "signer": null,
       "note": null
     },
     {
@@ -235,7 +299,8 @@
       "result": "All processes killed",
       "stopped": true,
       "tx": null,
-      "note": null
+      "signer": null,
+      "note": "Confirmed gone 6s after the lease ended, by the server's clock."
     },
     {
       "attack": "Log back in after the lease ends",
@@ -243,6 +308,25 @@
       "result": "Permission denied",
       "stopped": true,
       "tx": null,
+      "signer": null,
+      "note": null
+    },
+    {
+      "attack": "Block a real payment by forging a claim on its transaction",
+      "expected": "The real payment stays claimable",
+      "result": "The real payment stays claimable",
+      "stopped": true,
+      "tx": "J5MGvmNoX9uNzmiza1gB3fh94j45Y1nUPqoLyWppvCMR",
+      "signer": "lk-spike-iv2ae4.testnet",
+      "note": null
+    },
+    {
+      "attack": "Tie up a machine with a claim the network will refuse",
+      "expected": "Other tenants can still rent",
+      "result": "Other tenants can still rent",
+      "stopped": true,
+      "tx": "7qdwVufgaTWiVyaAyBWqLuJ53y1WexcTAaFRKZEAzsmi",
+      "signer": "sublet-tenant-0ekmh.testnet",
       "note": null
     },
     {
@@ -250,8 +334,9 @@
       "expected": "No key cut",
       "result": "No key cut",
       "stopped": true,
-      "tx": "3mjvZ8tWiewVBRqH1SaxSDgJxWDgEWTQ7mcpZq8CD3qu",
-      "note": "The MPC network would not attest it. Lease status Failed after 117s. Payment marked free again: true."
+      "tx": "J5MGvmNoX9uNzmiza1gB3fh94j45Y1nUPqoLyWppvCMR",
+      "signer": "lk-spike-iv2ae4.testnet",
+      "note": "The MPC network would not attest it. Lease status Failed after 119s. The real payment stayed claimable: true. Left no record in contract state: true."
     }
   ]
 }

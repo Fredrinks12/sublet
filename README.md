@@ -37,7 +37,7 @@ cd cli && npm ci && cd ..
 node scripts/judge.mjs
 ```
 
-It creates a free testnet account, starts a private `sshd` on a local port, lists it on the live contract, rents it and logs in. You should see these checks pass, then a line such as `11 of 11 checks passed`:
+It creates a free testnet account, starts a private `sshd` on a local port, lists it on the live contract, rents it and logs in. You should see these checks pass, then `10 of 10 checks passed`. It takes about two minutes, because it waits out a real lease.
 
 ```text
 PASS  a key with no lease is refused
@@ -47,7 +47,7 @@ PASS  the open session ended with the lease
 PASS  the same certificate is now refused
 ```
 
-It runs as you, so it uses `evict_user: false` and cannot touch your other processes.
+It runs as you, so it uses `evict_user: false` and cannot touch your other processes. If the testnet faucet refuses your IP, set `SUBLET_ACCOUNT` to a testnet account whose key is in `~/.near-credentials/testnet/`.
 
 ### Re-check the evidence
 
@@ -97,19 +97,19 @@ Add the MCP server to any compatible client:
 }
 ```
 
-The agent gets `list_machines`, `rent_machine`, `run_command` and `lease_status`. Run `npm ci` in `mcp/` first. `SUBLET_ACCOUNT` needs a key in `~/.near-credentials/testnet/`.
+The agent gets `list_machines`, `rent_machine`, `run_command` and `lease_status`. Run `npm ci` in both `cli/` and `mcp/` first. `SUBLET_ACCOUNT` needs a key in `~/.near-credentials/testnet/`.
 
 To watch an agent do a job on a machine it rented, run `node examples/agent-rents-a-box.mjs`. With `NEAR_AI_API_KEY` set, a model on NEAR AI Cloud makes the decisions. Without one, a fixed script uses the same tools.
 
 ### Let your own machine
 
-```sh
-sublet list my-box terms.json    # terms.json: see demo/terms-example.json
-sublet setup my-box              # prints the commands for your server
-sublet doctor my-box             # audits the chain of trust
-```
+Follow [docs/LIST-A-PUBLIC-MACHINE.md](docs/LIST-A-PUBLIC-MACHINE.md), or use the form on the website. Use a Unix user kept only for tenants. The contract refuses `root`.
 
-The website has a form for this too. Use a Unix user kept only for tenants. The contract refuses `root`.
+To audit a machine's chain of trust from public data:
+
+```sh
+node cli/bin/sublet.js doctor <unit>
+```
 
 ## How NEAR is used
 
@@ -170,7 +170,7 @@ Sublet is unaudited and runs on testnet. Rent on other chains needs an EIP-191 s
 
 Written during the hackathon window, from 19 October 2026, with no earlier code.
 
-**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64`, `hex`, `puppeteer-core` and `ed25519-dalek` for tests.
+**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64` and `hex`. For tests and the demo video: `ed25519-dalek`, `puppeteer-core` and `ffmpeg-static`.
 
 **AI tools:** written with Claude Code.
 

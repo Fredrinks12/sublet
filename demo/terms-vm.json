@@ -1,6 +1,6 @@
 {
-  "title": "Sunny 2-core Debian, walk-in shell",
-  "blurb": "Stock Debian 13 with stock OpenSSH. Nothing installed for Sublet. One line of sshd_config.",
+  "title": "Test machine: stock Debian 13, reachable only from the owner's laptop",
+  "blurb": "Stock OpenSSH. Nothing installed for Sublet. Renting works for anyone, but logging in needs the owner's network. A public machine is coming.",
   "host": "127.0.0.1",
   "port": 2222,
   "principal": "tenant",

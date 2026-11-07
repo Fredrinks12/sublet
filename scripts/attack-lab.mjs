@@ -316,8 +316,17 @@ const skew = Number((await serial.run('date +%s')).output) - Math.floor(Date.now
 const waitMs = (ends - skew - Math.floor(Date.now() / 1000) + 5) * 1000;
 console.log(`waiting ${Math.round(waitMs / 1000)}s for the lease to end (planted: ${planted.stdout})`);
 await new Promise((resolve) => setTimeout(resolve, Math.max(0, waitMs)));
-const { output: survivors } = await serial.run('ps -u tenant -o args= | grep -E "sleep (7|9)$" || true', { check: false });
-record('Leave nohup and setsid processes running past the end', 'All processes killed', survivors ? `Survived: ${survivors}` : 'All processes killed');
+// The timer runs inside the VM, which stalls for seconds at a time when this laptop is short of
+// memory. So poll, and report how long eviction really took, instead of guessing one fixed wait.
+let survivors = '';
+const evictionDeadline = Date.now() + 60_000;
+do {
+  ({ output: survivors } = await serial.run('ps -u tenant -o args= | grep -E "sleep (7|9)$" || true', { check: false }));
+  if (survivors) await new Promise((resolve) => setTimeout(resolve, 2000));
+} while (survivors && Date.now() < evictionDeadline);
+const guestNow = Number((await serial.run('date +%s')).output);
+record('Leave nohup and setsid processes running past the end', 'All processes killed',
+  survivors ? `Survived: ${survivors}` : 'All processes killed', null, `Confirmed gone ${guestNow - ends}s after the lease ended, by the server's clock.`);
 
 await new Promise((resolve) => setTimeout(resolve, Math.max(0, (skew + 3) * 1000)));
 const expired = execSsh(options, 'whoami', 'ssh', 60_000);

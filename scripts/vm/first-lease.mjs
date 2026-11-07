@@ -78,9 +78,14 @@ if (outcome === 'still-open') {
 } else {
   check('an open session dies when the lease ends', !output.includes('SURVIVED'), `ended ${late}s after the lease`);
 }
-await sleep(1500);
-const left = await tenantProcesses();
-check('nothing the tenant started survives', left.length === 0, left.join(' ; ') || 'no tenant processes remain');
+// The VM can stall for seconds on a busy host, so poll rather than trust one fixed wait.
+let left = await tenantProcesses();
+for (let tries = 0; left.length && tries < 30; tries += 1) {
+  await sleep(2000);
+  left = await tenantProcesses();
+}
+const guestClock = Number((await serial.run('date +%s')).output);
+check('nothing the tenant started survives', left.length === 0, left.join(' ; ') || `no tenant processes remain, ${guestClock - end}s after the end`);
 
 const after = execSsh(options, 'whoami', 'ssh', 90_000);
 check('the same certificate is refused after expiry', after.code === 255, after.stderr.split('\n').pop());

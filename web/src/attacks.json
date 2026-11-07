@@ -2,97 +2,117 @@
   {
     "attack": "Pay less than the rent",
     "result": "E_UNDERPAID",
-    "tx": "CiMD6Ee5UXKut6iE2YmgTVUQNJ7mXTGC4AzdkBXUcEjN"
+    "tx": "FTmeutWh2gm4Njr36b78msz8JRVTxtdc9jzipUQdKsdf"
   },
   {
     "attack": "Ask for more time than the owner allows",
     "result": "E_BAD_TICKS",
-    "tx": "2PisiugTzYQRtdRc7RWP1bkAhJrUqohxtmUAWQtggdMV"
+    "tx": "CArKF8DAVE9sEMJJwVDF6A1aVrXckqgTYdzDAJSCbaj"
   },
   {
     "attack": "Rent a machine the owner has paused",
     "result": "E_PAUSED",
-    "tx": "8dKX57doVEQruQRQnFi44aicfEnc52qpBn6cuGrP1e7V"
+    "tx": "JD8vZcuykXhvu7QR6QzJooD6L2MpjoEamQRe1oEJjgb1"
   },
   {
     "attack": "Rent a private machine as a stranger",
     "result": "E_NOT_ALLOWED",
-    "tx": "7x7BLuxNmM4w57mAAkx3oDrEPSNDWvPACZXTEwsSxw9z"
+    "tx": "DEShWmmn5FN8Fgya6GvUu1Vy3JaNviDQt9V75eBNCEmu"
   },
   {
     "attack": "Smuggle a shell command in as an IP address",
     "result": "E_BAD_SOURCE_ADDRESS",
-    "tx": "FPfGEuYwDGfi9Z8yqmtvZz4AYY3ADk5SQSNmFJN15iNt"
+    "tx": "3tBdL64262k8WNz5wTWnniKMcdnWiqmctDrCpqQ5PdMo"
   },
   {
     "attack": "Rewrite another owner's terms",
     "result": "E_NOT_OWNER",
-    "tx": "CAWRzejXWYrigXDF3x5sVZKUFogxK7HwJ617rAAzcXDw"
+    "tx": "9raSUBxGMEJXYgfhLx4NCzpXqbDWsffBtEDMKzvuvPde"
   },
   {
     "attack": "Pause another owner's machine",
     "result": "E_NOT_OWNER",
-    "tx": "26YmpEG5jkxS2VNeSKy5JyRXSN94Q1sT666SYgTQB7Yp"
+    "tx": "HnLzUbBafJoCRsKQB9gQH8RFMWD744EVZoNTNJ6wEYMQ"
   },
   {
     "attack": "Delist another owner's machine",
     "result": "E_NOT_OWNER",
-    "tx": "AuSCjxoDe4MC94TjcMMnK5dBFNnEYMrNa4NkUTkPpR3e"
+    "tx": "2cpeoUVy8sKjyUYAWk6cjjXDamxNLm5aC4acDNbf1Qy1"
   },
   {
     "attack": "Take over a listed machine's name",
     "result": "E_UNIT_EXISTS",
-    "tx": "CKVMeAhxAutLvdgjrgF3zxqpqSkDghKkzhH371Y87bT1"
+    "tx": "GxkT8uxpjwiaQPCFaXYndjeonvaQDUzFhoRYKtwBM8wv"
   },
   {
     "attack": "List a machine as root",
     "result": "E_ROOT_NOT_ALLOWED",
-    "tx": "4RvyYMBjDsSCKKfkV1F28NJUfChNR4cC5LsfnmHsRAi5"
+    "tx": "8wybSfirzp53oCt1dHga4svUtU29fQZPaEx6KnDANK8F"
   },
   {
     "attack": "List one Unix user twice, so two tenants share it",
     "result": "E_USER_ALREADY_LISTED",
-    "tx": "H883VUWBfMYnFZ2gas3fvQzMqkRudXUVThAcoCJEUg3N"
+    "tx": "Am68cmWdK4UGfrAq81RQqTbUngSDp1fuGf4LeFhcyckD"
+  },
+  {
+    "attack": "Hide a shell command in a server address, for a visitor to paste",
+    "result": "E_BAD_HOST",
+    "tx": "BtpPoXuLm46Dtz7BR3gt6Dgpny3srPxHitpbKxgS3Gay"
+  },
+  {
+    "attack": "Hide an ssh option in a Unix user name",
+    "result": "E_BAD_PRINCIPAL",
+    "tx": "2uDwMvZhefTkUVV8HGtNhgLdTe1Njmgn4Ft1K63QP5TF"
+  },
+  {
+    "attack": "Hide terminal escape codes in a listing",
+    "result": "E_BAD_TITLE",
+    "tx": "AVHviZ7EsEzyr9wp1udnA7te4txKix4H2BkL5Rmtqets"
   },
   {
     "attack": "Approve your own request",
     "result": "E_NOT_OWNER",
-    "tx": "8TxSmTekswxhZZNzkGcBuwwqHMUEoZZuZ8EjnQMmHEgd"
+    "tx": "43TbHX34zT5GSNhLqCurAMfsXjfGYKaeV3ZCQ1RMxNp4"
   },
   {
     "attack": "Cancel someone else's request",
     "result": "E_NOT_TENANT",
-    "tx": "8sqs3q8zNKDDdhbFZktRCKdjKhAcmF8bX6fkJKKewHzQ"
+    "tx": "C2LTygejzQ4BFb5gAMVA51RP2PKuKETWBkSsQxgxUbhd"
   },
   {
     "attack": "Call the signing callback directly, to forge a certificate",
     "result": "Method on_signed is private",
-    "tx": "2rTrdeNWmmkjuLAtbmX3kEABNT81Tgj8UBUZMxKQsx7E"
+    "tx": "CWdx8Gfod8WjiBHwN5bD3Grqg1u7gqJaSM9vVAwTJ48U"
   },
   {
     "attack": "Claim a stranger's real payment for your own key",
     "result": "E_WRONG_PAYER",
-    "tx": "3V6Y8iButFP4ga7CUJgp1its9pDTjC9pe9PWGZioPfZ2"
+    "tx": "GqdzhqWmsRBC3uKau32v2d2JUQeSBCYBWnCRgSoL8kTQ"
   },
   {
     "attack": "Claim a payment made in another token",
     "result": "E_WRONG_TOKEN",
-    "tx": "8mzZtpouTQWWEegRSoVyNZPwXFYxGrj5anVu13i3pqkj"
+    "tx": "7eGis756HvY4eMZghVa8dR6KxhdTBYm73NxmQkph5h5Z"
   },
   {
     "attack": "Claim a payment sent to someone else",
     "result": "E_WRONG_RECIPIENT",
-    "tx": "xsBH9jAeaKMksUwpYVSdfXxXvxDTgR54ebJN8DAZrGk"
+    "tx": "4BkLHz6HxW2bV5L1zvDx9x5BwUSMdDxWz31sP43Sd57A"
   },
   {
     "attack": "Pass off a different event as a transfer",
     "result": "E_NOT_A_TRANSFER",
-    "tx": "GGCXL4stgs9M7QHksKqFsNDKP23LU5BDXtGGfqfUyKfv"
+    "tx": "9uTSg5HMWacRbyEFfAcNheCDXm88NB6wNQVxDLe5iB2u"
   },
   {
     "attack": "Claim on a chain the owner does not accept",
     "result": "E_CHAIN_NOT_ACCEPTED",
-    "tx": "5RRTfmCNGFRy3K1nBkE5fM4CNcVoRJxskCid6Z8D1x9B"
+    "tx": "F57jf2UHTubNsadB7HZKDSVFivQSRJnvQFtr1rdRUmg"
+  },
+  {
+    "attack": "Rent a machine priced on Base for free through NEAR",
+    "result": "E_PAY_ON_ANOTHER_CHAIN",
+    "tx": "Bt8J3SeknnbShEpR2SQXphAc6429q4R5ULcCqsAr8b5a"
   },
   {
     "attack": "Log in with no lease",
@@ -102,7 +122,7 @@
   {
     "attack": "Rent a machine someone else holds",
     "result": "E_OCCUPIED",
-    "tx": "7AydPBsn2ytpDg5RR8DE8AHZVg2CL5pXDqqAbPS9dvhR"
+    "tx": "ZG4BRWRWpEZGaDyL6ZArAwXcauTq3spyd1ikvbXVRN8"
   },
   {
     "attack": "Copy a tenant's public certificate from the chain and use it",
@@ -150,8 +170,18 @@
     "tx": null
   },
   {
+    "attack": "Block a real payment by forging a claim on its transaction",
+    "result": "The real payment stays claimable",
+    "tx": "J5MGvmNoX9uNzmiza1gB3fh94j45Y1nUPqoLyWppvCMR"
+  },
+  {
+    "attack": "Tie up a machine with a claim the network will refuse",
+    "result": "Other tenants can still rent",
+    "tx": "7qdwVufgaTWiVyaAyBWqLuJ53y1WexcTAaFRKZEAzsmi"
+  },
+  {
     "attack": "Invent a payment that never happened",
     "result": "No key cut",
-    "tx": "3mjvZ8tWiewVBRqH1SaxSDgJxWDgEWTQ7mcpZq8CD3qu"
+    "tx": "J5MGvmNoX9uNzmiza1gB3fh94j45Y1nUPqoLyWppvCMR"
   }
 ]
