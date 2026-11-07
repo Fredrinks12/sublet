@@ -2,7 +2,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { newKeyPair, saveCertificate, subletHome } from './ssh.js';
+import { execSsh, newKeyPair, saveCertificate, subletHome } from './ssh.js';
 import { refusalCode } from './near.js';
 import { findTransfer, payToken, toContractLog } from './evm.js';
 
@@ -67,6 +67,17 @@ export async function rentWithNear(near, contract, unitId, ticks, { sourceAddres
   const lease = outcome.value;
   const paths = adoptKey(contract, lease.id, temp, lease.certificate);
   return { unit, lease, hash: outcome.hash, ...paths };
+}
+
+/**
+ * Buys more time on a machine you are already renting. Logging in once with the new certificate
+ * records its later end time on the server, so sessions that are already running carry on.
+ */
+export async function renewLease(near, contract, unitId, ticks) {
+  const result = await rentWithNear(near, contract, unitId, ticks);
+  const options = leaseConnection(contract, result.unit, result.lease);
+  const login = execSsh(options, 'true');
+  return { ...result, extended: login.code === 0 };
 }
 
 /**

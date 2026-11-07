@@ -1,16 +1,16 @@
 {
-  "contract": "cmw6h7jif.sublet-dev-0ekmh.testnet",
-  "run_at": "2026-11-07T14:14:04.478Z",
+  "contract": "cmw6hm1bu.sublet-dev-0ekmh.testnet",
+  "run_at": "2026-11-07T14:21:58.624Z",
   "network": "testnet",
-  "stopped": 26,
-  "total": 28,
+  "stopped": 31,
+  "total": 31,
   "results": [
     {
       "attack": "Pay less than the rent",
       "expected": "E_UNDERPAID",
       "result": "E_UNDERPAID",
       "stopped": true,
-      "tx": "34ZPoB5qpYsViouDvAXcWG6Kk5GNXT7SzzYT2KSCLFjp",
+      "tx": "CiMD6Ee5UXKut6iE2YmgTVUQNJ7mXTGC4AzdkBXUcEjN",
       "note": null
     },
     {
@@ -18,7 +18,7 @@
       "expected": "E_BAD_TICKS",
       "result": "E_BAD_TICKS",
       "stopped": true,
-      "tx": "ChdUe1ufs9HqbcxsSuNYuYtbRcs5QZJzwd7dsgNhvYJ4",
+      "tx": "2PisiugTzYQRtdRc7RWP1bkAhJrUqohxtmUAWQtggdMV",
       "note": null
     },
     {
@@ -26,7 +26,7 @@
       "expected": "E_PAUSED",
       "result": "E_PAUSED",
       "stopped": true,
-      "tx": "VWR2fE2aBXawziszUBMbc6XVLhpSJ1gxZBWaAwdPXPk",
+      "tx": "8dKX57doVEQruQRQnFi44aicfEnc52qpBn6cuGrP1e7V",
       "note": null
     },
     {
@@ -34,7 +34,7 @@
       "expected": "E_NOT_ALLOWED",
       "result": "E_NOT_ALLOWED",
       "stopped": true,
-      "tx": "6G6EvwB5aZ3UqKuWDZY53bQhv3amPjkmcfymF82G6Kse",
+      "tx": "7x7BLuxNmM4w57mAAkx3oDrEPSNDWvPACZXTEwsSxw9z",
       "note": null
     },
     {
@@ -42,7 +42,7 @@
       "expected": "E_BAD_SOURCE_ADDRESS",
       "result": "E_BAD_SOURCE_ADDRESS",
       "stopped": true,
-      "tx": "ByHZYuz9zpQHJ15HK4rMf519rfkitfpEpQ5Suiyv4a2x",
+      "tx": "FPfGEuYwDGfi9Z8yqmtvZz4AYY3ADk5SQSNmFJN15iNt",
       "note": null
     },
     {
@@ -50,7 +50,7 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "5ZaKi7JnBL1eSJL6GzwedeUNtqr1CXtwh2nPAb77Se4M",
+      "tx": "CAWRzejXWYrigXDF3x5sVZKUFogxK7HwJ617rAAzcXDw",
       "note": null
     },
     {
@@ -58,7 +58,7 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "GFHaehwUwKv11tiZhocMn8tnqTM8UYV6j4xZJnUUJREu",
+      "tx": "26YmpEG5jkxS2VNeSKy5JyRXSN94Q1sT666SYgTQB7Yp",
       "note": null
     },
     {
@@ -66,7 +66,7 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "DhbCijWtKDAfCUg1To416aDATcEdHAUaAPS1jHuDRCKk",
+      "tx": "AuSCjxoDe4MC94TjcMMnK5dBFNnEYMrNa4NkUTkPpR3e",
       "note": null
     },
     {
@@ -74,7 +74,23 @@
       "expected": "E_UNIT_EXISTS",
       "result": "E_UNIT_EXISTS",
       "stopped": true,
-      "tx": "9QmiAi7rXLAQRyMUqhS9NwWnrBEe35Ah9yRnaFruSxs8",
+      "tx": "CKVMeAhxAutLvdgjrgF3zxqpqSkDghKkzhH371Y87bT1",
+      "note": null
+    },
+    {
+      "attack": "List a machine as root",
+      "expected": "E_ROOT_NOT_ALLOWED",
+      "result": "E_ROOT_NOT_ALLOWED",
+      "stopped": true,
+      "tx": "4RvyYMBjDsSCKKfkV1F28NJUfChNR4cC5LsfnmHsRAi5",
+      "note": null
+    },
+    {
+      "attack": "List one Unix user twice, so two tenants share it",
+      "expected": "E_USER_ALREADY_LISTED",
+      "result": "E_USER_ALREADY_LISTED",
+      "stopped": true,
+      "tx": "H883VUWBfMYnFZ2gas3fvQzMqkRudXUVThAcoCJEUg3N",
       "note": null
     },
     {
@@ -82,7 +98,7 @@
       "expected": "E_NOT_OWNER",
       "result": "E_NOT_OWNER",
       "stopped": true,
-      "tx": "Gq6vSo3dvcggfVLjis6mc1ZcL1jYEMquEFNi8vAkhEau",
+      "tx": "8TxSmTekswxhZZNzkGcBuwwqHMUEoZZuZ8EjnQMmHEgd",
       "note": null
     },
     {
@@ -90,7 +106,7 @@
       "expected": "E_NOT_TENANT",
       "result": "E_NOT_TENANT",
       "stopped": true,
-      "tx": "5nmPYSv5f46tH3ZbfEYhTvXhQ2k7i1dpQpyi8yY1TNdX",
+      "tx": "8sqs3q8zNKDDdhbFZktRCKdjKhAcmF8bX6fkJKKewHzQ",
       "note": null
     },
     {
@@ -98,7 +114,7 @@
       "expected": "Method on_signed is private",
       "result": "Method on_signed is private",
       "stopped": true,
-      "tx": "GoaakMMxWCEuriZ2X5YZgHViRfav77u3P31rWiPJrxPa",
+      "tx": "2rTrdeNWmmkjuLAtbmX3kEABNT81Tgj8UBUZMxKQsx7E",
       "note": null
     },
     {
@@ -106,7 +122,7 @@
       "expected": "E_WRONG_PAYER",
       "result": "E_WRONG_PAYER",
       "stopped": true,
-      "tx": "9WgPN9JMhN5UR1cUM2SdaKBQG6mfrLkBUvuHyHezeicu",
+      "tx": "3V6Y8iButFP4ga7CUJgp1its9pDTjC9pe9PWGZioPfZ2",
       "note": null
     },
     {
@@ -114,7 +130,7 @@
       "expected": "E_WRONG_TOKEN",
       "result": "E_WRONG_TOKEN",
       "stopped": true,
-      "tx": "J4K1W3AajeF8ctQKiLKB7LtQoDecFiUyCrUanwGtgPsc",
+      "tx": "8mzZtpouTQWWEegRSoVyNZPwXFYxGrj5anVu13i3pqkj",
       "note": null
     },
     {
@@ -122,7 +138,7 @@
       "expected": "E_WRONG_RECIPIENT",
       "result": "E_WRONG_RECIPIENT",
       "stopped": true,
-      "tx": "EbvhC1npjHRoGyMVu28EFJhfbjRMbQN1cB8R5nP7ojWU",
+      "tx": "xsBH9jAeaKMksUwpYVSdfXxXvxDTgR54ebJN8DAZrGk",
       "note": null
     },
     {
@@ -130,7 +146,7 @@
       "expected": "E_NOT_A_TRANSFER",
       "result": "E_NOT_A_TRANSFER",
       "stopped": true,
-      "tx": "3BCHyfQaPkGqb7b4ugyCaqmn24uvrRUQ29za8yVAcmc7",
+      "tx": "GGCXL4stgs9M7QHksKqFsNDKP23LU5BDXtGGfqfUyKfv",
       "note": null
     },
     {
@@ -138,7 +154,7 @@
       "expected": "E_CHAIN_NOT_ACCEPTED",
       "result": "E_CHAIN_NOT_ACCEPTED",
       "stopped": true,
-      "tx": "6bGvAPAPmoesL23MWEwkRsZv8ovmEpexinKjZcfzouAj",
+      "tx": "5RRTfmCNGFRy3K1nBkE5fM4CNcVoRJxskCid6Z8D1x9B",
       "note": null
     },
     {
@@ -154,7 +170,7 @@
       "expected": "E_OCCUPIED",
       "result": "E_OCCUPIED",
       "stopped": true,
-      "tx": "Eyu3dB6uY15Hn6SVVtK4GpjMgFtRnHEdZUgiqerTvryJ",
+      "tx": "7AydPBsn2ytpDg5RR8DE8AHZVg2CL5pXDqqAbPS9dvhR",
       "note": null
     },
     {
@@ -182,10 +198,18 @@
       "note": null
     },
     {
-      "attack": "Open a port forward the owner did not allow",
+      "attack": "Tunnel through the machine to another service",
       "expected": "Forwarding refused",
-      "result": "exit 0: ",
-      "stopped": false,
+      "result": "Forwarding refused",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Make the machine listen on a port for you",
+      "expected": "Forwarding refused",
+      "result": "Forwarding refused",
+      "stopped": true,
       "tx": null,
       "note": null
     },
@@ -208,8 +232,8 @@
     {
       "attack": "Leave nohup and setsid processes running past the end",
       "expected": "All processes killed",
-      "result": "Survived: sleep 7\nsleep 9",
-      "stopped": false,
+      "result": "All processes killed",
+      "stopped": true,
       "tx": null,
       "note": null
     },
@@ -226,8 +250,8 @@
       "expected": "No key cut",
       "result": "No key cut",
       "stopped": true,
-      "tx": "GVxzeNFyu7AH5aWqsADJvFjgX9kz5LtGDPFt6iGwdKuf",
-      "note": "The MPC network would not attest it. Lease status Failed after 112s. Payment marked free again: true."
+      "tx": "3mjvZ8tWiewVBRqH1SaxSDgJxWDgEWTQ7mcpZq8CD3qu",
+      "note": "The MPC network would not attest it. Lease status Failed after 117s. Payment marked free again: true."
     }
   ]
 }

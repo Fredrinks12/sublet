@@ -2,87 +2,97 @@
   {
     "attack": "Pay less than the rent",
     "result": "E_UNDERPAID",
-    "tx": "34ZPoB5qpYsViouDvAXcWG6Kk5GNXT7SzzYT2KSCLFjp"
+    "tx": "CiMD6Ee5UXKut6iE2YmgTVUQNJ7mXTGC4AzdkBXUcEjN"
   },
   {
     "attack": "Ask for more time than the owner allows",
     "result": "E_BAD_TICKS",
-    "tx": "ChdUe1ufs9HqbcxsSuNYuYtbRcs5QZJzwd7dsgNhvYJ4"
+    "tx": "2PisiugTzYQRtdRc7RWP1bkAhJrUqohxtmUAWQtggdMV"
   },
   {
     "attack": "Rent a machine the owner has paused",
     "result": "E_PAUSED",
-    "tx": "VWR2fE2aBXawziszUBMbc6XVLhpSJ1gxZBWaAwdPXPk"
+    "tx": "8dKX57doVEQruQRQnFi44aicfEnc52qpBn6cuGrP1e7V"
   },
   {
     "attack": "Rent a private machine as a stranger",
     "result": "E_NOT_ALLOWED",
-    "tx": "6G6EvwB5aZ3UqKuWDZY53bQhv3amPjkmcfymF82G6Kse"
+    "tx": "7x7BLuxNmM4w57mAAkx3oDrEPSNDWvPACZXTEwsSxw9z"
   },
   {
     "attack": "Smuggle a shell command in as an IP address",
     "result": "E_BAD_SOURCE_ADDRESS",
-    "tx": "ByHZYuz9zpQHJ15HK4rMf519rfkitfpEpQ5Suiyv4a2x"
+    "tx": "FPfGEuYwDGfi9Z8yqmtvZz4AYY3ADk5SQSNmFJN15iNt"
   },
   {
     "attack": "Rewrite another owner's terms",
     "result": "E_NOT_OWNER",
-    "tx": "5ZaKi7JnBL1eSJL6GzwedeUNtqr1CXtwh2nPAb77Se4M"
+    "tx": "CAWRzejXWYrigXDF3x5sVZKUFogxK7HwJ617rAAzcXDw"
   },
   {
     "attack": "Pause another owner's machine",
     "result": "E_NOT_OWNER",
-    "tx": "GFHaehwUwKv11tiZhocMn8tnqTM8UYV6j4xZJnUUJREu"
+    "tx": "26YmpEG5jkxS2VNeSKy5JyRXSN94Q1sT666SYgTQB7Yp"
   },
   {
     "attack": "Delist another owner's machine",
     "result": "E_NOT_OWNER",
-    "tx": "DhbCijWtKDAfCUg1To416aDATcEdHAUaAPS1jHuDRCKk"
+    "tx": "AuSCjxoDe4MC94TjcMMnK5dBFNnEYMrNa4NkUTkPpR3e"
   },
   {
     "attack": "Take over a listed machine's name",
     "result": "E_UNIT_EXISTS",
-    "tx": "9QmiAi7rXLAQRyMUqhS9NwWnrBEe35Ah9yRnaFruSxs8"
+    "tx": "CKVMeAhxAutLvdgjrgF3zxqpqSkDghKkzhH371Y87bT1"
+  },
+  {
+    "attack": "List a machine as root",
+    "result": "E_ROOT_NOT_ALLOWED",
+    "tx": "4RvyYMBjDsSCKKfkV1F28NJUfChNR4cC5LsfnmHsRAi5"
+  },
+  {
+    "attack": "List one Unix user twice, so two tenants share it",
+    "result": "E_USER_ALREADY_LISTED",
+    "tx": "H883VUWBfMYnFZ2gas3fvQzMqkRudXUVThAcoCJEUg3N"
   },
   {
     "attack": "Approve your own request",
     "result": "E_NOT_OWNER",
-    "tx": "Gq6vSo3dvcggfVLjis6mc1ZcL1jYEMquEFNi8vAkhEau"
+    "tx": "8TxSmTekswxhZZNzkGcBuwwqHMUEoZZuZ8EjnQMmHEgd"
   },
   {
     "attack": "Cancel someone else's request",
     "result": "E_NOT_TENANT",
-    "tx": "5nmPYSv5f46tH3ZbfEYhTvXhQ2k7i1dpQpyi8yY1TNdX"
+    "tx": "8sqs3q8zNKDDdhbFZktRCKdjKhAcmF8bX6fkJKKewHzQ"
   },
   {
     "attack": "Call the signing callback directly, to forge a certificate",
     "result": "Method on_signed is private",
-    "tx": "GoaakMMxWCEuriZ2X5YZgHViRfav77u3P31rWiPJrxPa"
+    "tx": "2rTrdeNWmmkjuLAtbmX3kEABNT81Tgj8UBUZMxKQsx7E"
   },
   {
     "attack": "Claim a stranger's real payment for your own key",
     "result": "E_WRONG_PAYER",
-    "tx": "9WgPN9JMhN5UR1cUM2SdaKBQG6mfrLkBUvuHyHezeicu"
+    "tx": "3V6Y8iButFP4ga7CUJgp1its9pDTjC9pe9PWGZioPfZ2"
   },
   {
     "attack": "Claim a payment made in another token",
     "result": "E_WRONG_TOKEN",
-    "tx": "J4K1W3AajeF8ctQKiLKB7LtQoDecFiUyCrUanwGtgPsc"
+    "tx": "8mzZtpouTQWWEegRSoVyNZPwXFYxGrj5anVu13i3pqkj"
   },
   {
     "attack": "Claim a payment sent to someone else",
     "result": "E_WRONG_RECIPIENT",
-    "tx": "EbvhC1npjHRoGyMVu28EFJhfbjRMbQN1cB8R5nP7ojWU"
+    "tx": "xsBH9jAeaKMksUwpYVSdfXxXvxDTgR54ebJN8DAZrGk"
   },
   {
     "attack": "Pass off a different event as a transfer",
     "result": "E_NOT_A_TRANSFER",
-    "tx": "3BCHyfQaPkGqb7b4ugyCaqmn24uvrRUQ29za8yVAcmc7"
+    "tx": "GGCXL4stgs9M7QHksKqFsNDKP23LU5BDXtGGfqfUyKfv"
   },
   {
     "attack": "Claim on a chain the owner does not accept",
     "result": "E_CHAIN_NOT_ACCEPTED",
-    "tx": "6bGvAPAPmoesL23MWEwkRsZv8ovmEpexinKjZcfzouAj"
+    "tx": "5RRTfmCNGFRy3K1nBkE5fM4CNcVoRJxskCid6Z8D1x9B"
   },
   {
     "attack": "Log in with no lease",
@@ -92,7 +102,7 @@
   {
     "attack": "Rent a machine someone else holds",
     "result": "E_OCCUPIED",
-    "tx": "Eyu3dB6uY15Hn6SVVtK4GpjMgFtRnHEdZUgiqerTvryJ"
+    "tx": "7AydPBsn2ytpDg5RR8DE8AHZVg2CL5pXDqqAbPS9dvhR"
   },
   {
     "attack": "Copy a tenant's public certificate from the chain and use it",
@@ -110,8 +120,13 @@
     "tx": null
   },
   {
-    "attack": "Open a port forward the owner did not allow",
-    "result": "exit 0: ",
+    "attack": "Tunnel through the machine to another service",
+    "result": "Forwarding refused",
+    "tx": null
+  },
+  {
+    "attack": "Make the machine listen on a port for you",
+    "result": "Forwarding refused",
     "tx": null
   },
   {
@@ -126,7 +141,7 @@
   },
   {
     "attack": "Leave nohup and setsid processes running past the end",
-    "result": "Survived: sleep 7\nsleep 9",
+    "result": "All processes killed",
     "tx": null
   },
   {
@@ -137,6 +152,6 @@
   {
     "attack": "Invent a payment that never happened",
     "result": "No key cut",
-    "tx": "GVxzeNFyu7AH5aWqsADJvFjgX9kz5LtGDPFt6iGwdKuf"
+    "tx": "3mjvZ8tWiewVBRqH1SaxSDgJxWDgEWTQ7mcpZq8CD3qu"
   }
 ]

@@ -1,0 +1,25 @@
+{
+  "title": "Sunny 8-core, 32 GB, NVMe",
+  "blurb": "Stock Debian. Gigabit. Shell access.",
+  "host": "203.0.113.7",
+  "port": 22,
+  "principal": "tenant",
+  "command": null,
+  "evict_user": true,
+  "permit_pty": true,
+  "permit_port_forwarding": false,
+  "tick_secs": 300,
+  "max_ticks": 12,
+  "near_per_tick": "50000000000000000000000",
+  "foreign": [
+    {
+      "chain": "Base",
+      "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+      "pay_to": "0x0000000000000000000000000000000000000000",
+      "amount_per_tick": "100000",
+      "finality": "Safe"
+    }
+  ],
+  "allowlist": null,
+  "needs_approval": false
+}

@@ -32,9 +32,9 @@ const known = path.join(scratch, 'known_hosts');
 const FEE = 10n ** 22n;
 const results = [];
 
-function record(attack, expected, got, tx, note) {
+function record(attack, expected, got, tx, note, signer) {
   const stopped = got === expected;
-  results.push({ attack, expected, result: got, stopped, tx: tx ?? null, note: note ?? null });
+  results.push({ attack, expected, result: got, stopped, tx: tx ?? null, signer: signer ?? null, note: note ?? null });
   console.log(`[${stopped ? 'STOPPED' : 'NOT STOPPED'}] ${attack}\n    ${got}${tx ? `  ${near_url(tx)}` : ''}`);
 }
 
@@ -43,7 +43,7 @@ const near_url = (tx) => `${reader.config.explorer}${tx}`;
 async function refused(attack, expected, near, method, args, options = {}) {
   const outcome = await near.call(contract, method, args, { gasTera: 100, ...options });
   const got = outcome.success ? 'ACCEPTED' : refusalCode(outcome.error) ?? (outcome.error ?? '').slice(0, 80);
-  record(attack, expected, got, outcome.hash);
+  record(attack, expected, got, outcome.hash, null, near.accountId);
   return outcome;
 }
 
@@ -183,7 +183,7 @@ await refused('Cancel someone else\'s request', 'E_NOT_TENANT', stranger, 'cance
 
 const privateCall = await stranger.call(contract, 'on_signed', { id: 1, tbs: '00' }, { gasTera: 30 });
 record('Call the signing callback directly, to forge a certificate', 'Method on_signed is private',
-  privateCall.success ? 'ACCEPTED' : (String(privateCall.error).match(/Method \w+ is private/)?.[0] ?? String(privateCall.error).slice(0, 80)), privateCall.hash);
+  privateCall.success ? 'ACCEPTED' : (String(privateCall.error).match(/Method \w+ is private/)?.[0] ?? String(privateCall.error).slice(0, 80)), privateCall.hash, null, strangerId);
 
 console.log('\n--- attacks on foreign payments ---');
 const attacker = walletFor(env.EVM_TENANT_KEY);
@@ -325,7 +325,7 @@ const issued = Boolean(inventedLease?.certificate);
 const reclaimed = !(await reader.view(contract, 'is_payment_spent', { chain: 'Base', tx: invented.transaction_hash, log_index: invented.log_index }));
 record('Invent a payment that never happened', 'No key cut',
   issued ? 'KEY ISSUED' : 'No key cut', inventedHash,
-  `The MPC network would not attest it. Lease status ${inventedLease?.status ?? 'none'} after ${seconds}s. Payment marked free again: ${reclaimed}.`);
+  `The MPC network would not attest it. Lease status ${inventedLease?.status ?? 'none'} after ${seconds}s. Payment marked free again: ${reclaimed}.`, strangerId);
 
 serial.close();
 fs.rmSync(scratch, { recursive: true, force: true });

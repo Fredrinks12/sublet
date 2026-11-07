@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { parseArgs } from 'node:util';
 import { Near } from '../src/near.js';
 import { doctor } from '../src/doctor.js';
-import { claimForeign, leaseConnection, payAndClaim, rentWithNear } from '../src/leases.js';
+import { claimForeign, leaseConnection, payAndClaim, renewLease, rentWithNear } from '../src/leases.js';
 import { execSsh, runSsh } from '../src/ssh.js';
 import { findTransfer, publicClient, toContractLog, walletFor } from '../src/evm.js';
 
@@ -16,6 +16,7 @@ Find a machine
 
 Rent one
   sublet rent <unit> [--ticks 1]       pay in NEAR, get a key
+  sublet renew <unit> [--ticks 1]      buy more time, keeping running sessions alive
   sublet pay <unit> --chain Base       pay on another chain, get a key
   sublet claim <unit> --chain Base --tx 0x...   claim a payment you already made
   sublet ssh <lease> [-- command]      connect with a lease
@@ -119,7 +120,8 @@ const commands = {
     if (!unit?.ca_public_key) throw new Error(`Unit ${id} has no CA key yet.`);
     const lines = [
       `# Run on your server. Nothing is installed.`,
-      `sudo useradd -m -s /bin/bash ${unit.terms.principal}   # skip if the user exists`,
+      `# Tenants log in as this user. Keep it for tenants only, never your own login.`,
+      `sudo useradd -m -s /bin/bash ${unit.terms.principal}`,
       `echo '${unit.ca_public_key}' | sudo tee /etc/ssh/sublet_ca.pub`,
       `echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' | sudo tee /etc/ssh/sshd_config.d/sublet.conf`,
       `sudo systemctl reload ssh`,
@@ -141,6 +143,12 @@ const commands = {
     print(result, () => (result.lease.status === 'AwaitingApproval'
       ? `Lease ${result.lease.id} is waiting for the owner to approve it.`
       : leaseSummary(result)));
+  },
+
+  async renew() {
+    const unit = requireArg(rest[0], '<unit>');
+    const result = await renewLease(near, contract, unit, Number(flags.ticks));
+    print(result, () => `${leaseSummary(result)}\n  running sessions ${result.extended ? 'carry on until the new end time' : 'were not reached, so log in once with this lease'}`);
   },
 
   async pay() {

@@ -1,4 +1,4 @@
-import { CONTRACT, EXPLORER, accessKeys, accountState, openPocket, pocket, rent, rentForeign, rpc, view } from './chain.js';
+import { CONTRACT, EXPLORER, accessKeys, accountState, listUnit, openPocket, pocket, rent, rentForeign, rpc, view } from './chain.js';
 import { connectWallet, hasWallet, payToken, signClaim, transferLog } from './evm.js';
 import { loginScript, newSshKey } from './keys.js';
 import attacks from './attacks.json';
@@ -373,6 +373,132 @@ function showKey(unit, lease, key, hash, paymentTx) {
   );
 }
 
+// ---- Listing a machine -------------------------------------------------------------------------
+
+const LISTING_REFUSALS = {
+  E_BAD_UNIT_ID: 'Use 3 to 32 lowercase letters, digits or hyphens for the name.',
+  E_UNIT_EXISTS: 'That name is taken. Choose another.',
+  E_USER_ALREADY_LISTED: 'You already list this user on this server. Each Unix user can be one unit, so tenants never share it.',
+  E_ROOT_NOT_ALLOWED: 'Tenants cannot log in as root. Create a user just for them.',
+  E_BAD_PRINCIPAL: 'That Unix user name has characters the contract does not accept.',
+  E_BAD_TICK: 'A tick must last between 30 seconds and a day.',
+  E_BAD_ADDRESS: 'That does not look like a 0x address.',
+};
+
+function openListing() {
+  const input = (name, attrs = {}) => el('input', { name, id: `list-${name}`, ...attrs });
+  const row = (label, control, hint) =>
+    el('div', { class: 'form-row' }, el('label', { for: control.id }, label), control, hint ? el('small', {}, hint) : null);
+  const form = el(
+    'form',
+    { class: 'listing' },
+    row('Name', input('id', { required: '', pattern: '[a-z0-9-]{3,32}', placeholder: 'helsinki-8c' }), 'Lowercase letters, digits and hyphens.'),
+    row('Headline', input('title', { required: '', maxlength: 80, placeholder: 'Sunny 8-core, 32 GB, NVMe' })),
+    row('Description', input('blurb', { maxlength: 280, placeholder: 'What a tenant gets, and any house rules.' })),
+    el(
+      'div',
+      { class: 'form-pair' },
+      row('Server address', input('host', { required: '', placeholder: '203.0.113.7' })),
+      row('SSH port', input('port', { type: 'number', required: '', min: 1, max: 65535, value: 22 })),
+    ),
+    row('Unix user for tenants', input('principal', { required: '', value: 'tenant' }), 'Create one just for this. Never root, never your own login.'),
+    el(
+      'div',
+      { class: 'form-pair' },
+      row('Minutes per tick', input('minutes', { type: 'number', required: '', min: 1, max: 1440, value: 5 })),
+      row('NEAR per tick', input('price', { required: '', inputmode: 'decimal', value: '0.05' })),
+    ),
+    row('Longest lease, in ticks', input('max', { type: 'number', required: '', min: 1, max: 1000, value: 12 })),
+    el(
+      'label',
+      { class: 'form-check' },
+      input('evict', { type: 'checkbox', checked: '' }),
+      el('span', {}, 'This Unix user is kept for tenants, so every process it owns can be killed when a lease ends.'),
+    ),
+    el('button', { class: 'btn go', type: 'submit' }, 'List this machine'),
+  );
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitListing(new FormData(form), form);
+  });
+  $('rent-body').replaceChildren(
+    el('h2', { id: 'rent-title' }, 'List a machine'),
+    el('p', { class: 'sub' }, 'Your terms go in the contract, where anyone can read them.'),
+    form,
+  );
+  $('rent').showModal();
+}
+
+/** Turns a decimal NEAR amount into yocto without going through floating point. */
+function toYocto(text) {
+  const [whole, fraction = ''] = text.trim().split('.');
+  if (!/^\d*$/.test(whole) || !/^\d*$/.test(fraction) || fraction.length > 24) throw new Error('Enter the price as a number, such as 0.05.');
+  return (BigInt(whole || '0') * 10n ** 24n + BigInt(fraction.padEnd(24, '0') || '0')).toString();
+}
+
+async function submitListing(data, form) {
+  const button = form.querySelector('.btn.go');
+  form.querySelector('.errorbox')?.remove();
+  button.disabled = true;
+  button.textContent = 'Listing, this takes a few seconds';
+  const id = data.get('id');
+  try {
+    const terms = {
+      title: data.get('title'),
+      blurb: data.get('blurb') ?? '',
+      host: data.get('host'),
+      port: Number(data.get('port')),
+      principal: data.get('principal'),
+      command: null,
+      evict_user: data.get('evict') === 'on',
+      permit_pty: true,
+      permit_port_forwarding: false,
+      tick_secs: Number(data.get('minutes')) * 60,
+      max_ticks: Number(data.get('max')),
+      near_per_tick: toYocto(data.get('price')),
+      foreign: [],
+      allowlist: null,
+      needs_approval: false,
+    };
+    await openPocket();
+    await listUnit(id, terms);
+    const unit = await view('get_unit', { id });
+    showSetup(unit);
+    loadUnits();
+    $('pocket-status').textContent = `Your testnet account: ${pocket().accountId}`;
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = 'List this machine';
+    button.before(el('div', { class: 'errorbox' }, LISTING_REFUSALS[error.code] ?? error.message ?? 'Something went wrong.'));
+  }
+}
+
+function showSetup(unit) {
+  const principal = unit.terms.principal;
+  const script = [
+    `sudo useradd -m -s /bin/bash ${principal}   # skip if the user exists`,
+    `echo '${unit.ca_public_key}' | sudo tee /etc/ssh/sublet_ca.pub`,
+    `echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' | sudo tee /etc/ssh/sshd_config.d/sublet.conf`,
+    `sudo systemctl reload ssh`,
+  ].join('\n');
+  const copy = el('button', { class: 'btn go', type: 'button' }, 'Copy the server commands');
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(script);
+      copy.textContent = 'Copied. Run them on your server.';
+    } catch {
+      copy.textContent = 'Select the text above and copy it.';
+    }
+  });
+  $('rent-body').replaceChildren(
+    el('h2', { id: 'rent-title' }, `${unit.id} is listed`),
+    el('p', { class: 'note' }, 'Run these on your server. Nothing is installed, and your own SSH access does not change.'),
+    el('pre', { class: 'script', tabindex: '0' }, script),
+    copy,
+    el('p', { class: 'note' }, `You own this listing through a testnet account kept in this browser, ${pocket().accountId}.`),
+  );
+}
+
 // ---- The replay --------------------------------------------------------------------------------
 
 const REPLAY = [
@@ -450,6 +576,7 @@ function setUpEditions() {
 // ---- Start -------------------------------------------------------------------------------------
 
 setUpEditions();
+$('list-machine').addEventListener('click', openListing);
 $('contract-name').textContent = CONTRACT;
 $('today').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format();
 if (pocket()) $('pocket-status').textContent = `Your testnet account: ${pocket().accountId}`;
