@@ -101,7 +101,8 @@ async function scripted() {
   const program = 'awk "BEGIN{n=2000000;for(i=2;i*i<=n;i++)if(!s[i])for(j=i*i;j<=n;j+=i)s[j]=1;for(i=2;i<=n;i++)if(!s[i])c++;print c}"';
   const run = await use('run_command', { lease: lease.lease, command: `date +%s; ${program}; date +%s; nproc` });
   await use('lease_status', { lease: lease.lease });
-  console.log(`\nResult: ${run.stdout?.replaceAll('\n', ' ')}. Spent ${lease.spent_near} NEAR.`);
+  const [start, primes, finish, cores] = (run.stdout ?? '').split('\n');
+  console.log(`\nResult: ${primes} primes below 2,000,000, in ${finish - start}s on a ${cores}-core machine. Spent ${lease.spent_near} NEAR.`);
 }
 
 console.log(`Job: ${JOB}`);
