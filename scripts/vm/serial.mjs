@@ -57,11 +57,13 @@ export class Serial {
     for (;;) {
       this.send('\n');
       await new Promise((resolve) => setTimeout(resolve, 3000));
-      if (/root@[^\s]*:.*#\s*$/.test(this.buffer)) break;
+      if (/(root@[^\s]*:.*|^|\n)#\s*$/.test(this.buffer)) break;
       if (/login:\s*$/.test(this.buffer)) {
         this.buffer = '';
         this.send('root\n');
-        await this.expect(/#\s*$/, 60_000);
+        await this.expect(/Password:\s*$/, 60_000);
+        this.send('sublet-vm\n');
+        await this.expect(/root@[^\s]*:.*#\s*$/, 90_000);
         break;
       }
       if (Date.now() > deadline) throw new Error(`No login prompt. Tail:\n${this.buffer.slice(-600)}`);

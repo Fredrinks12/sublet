@@ -99,8 +99,11 @@ pub struct Unit {
     leases: u64,
     renewals: u64,
     ticks_sold: u64,
-    last_tenant: Option<String>,
-    last_end: u64,
+    /// Tenants share a Unix user, so a unit has one tenant at a time.
+    tenant: Option<String>,
+    tenant_until: u64,
+    /// The lease whose key is being cut. Blocks other requests until it resolves.
+    in_flight: Option<u64>,
 }
 
 #[near(serializers = [json])]
@@ -114,6 +117,9 @@ pub struct UnitView {
     pub leases: U64,
     pub renewals: U64,
     pub ticks_sold: U64,
+    /// Current tenant, if any. Zero `occupied_until` or a past time means the unit is vacant.
+    pub occupied_by: Option<String>,
+    pub occupied_until: U64,
 }
 
 #[near(serializers = [borsh, json])]
@@ -158,6 +164,8 @@ pub struct Lease {
 pub struct About {
     pub name: String,
     pub version: String,
+    /// `release`, or `dev-any-payer` for a test build that skips the payer check. Never trust one.
+    pub build: String,
     pub mpc: AccountId,
     pub sign_domain: u32,
     pub foreign_domain: u32,
@@ -301,8 +309,9 @@ impl Sublet {
                 leases: 0,
                 renewals: 0,
                 ticks_sold: 0,
-                last_tenant: None,
-                last_end: 0,
+                tenant: None,
+                tenant_until: 0,
+                in_flight: None,
             },
         );
 
@@ -363,9 +372,13 @@ impl Sublet {
     pub fn approve(&mut self, lease_id: U64) -> Promise {
         let lease = self.lease_or_refuse(lease_id.0);
         require!(lease.status == LeaseStatus::AwaitingApproval, "E_NOT_AWAITING_APPROVAL");
-        let unit = self.units.get(&lease.unit).unwrap_or_else(|| refuse("E_NO_UNIT"));
-        require!(unit.owner == env::predecessor_account_id(), "E_NOT_OWNER");
+        let caller = env::predecessor_account_id();
+        let unit = self.units.get_mut(&lease.unit).unwrap_or_else(|| refuse("E_NO_UNIT"));
+        require!(unit.owner == caller, "E_NOT_OWNER");
         require!(!unit.paused, "E_PAUSED");
+        require!(unit.in_flight.is_none(), "E_BUSY");
+        assert_vacant(unit, &lease.tenant);
+        unit.in_flight = Some(lease_id.0);
         self.cut_key(lease_id.0)
     }
 
@@ -404,6 +417,9 @@ impl Sublet {
         require!(ticks >= 1 && ticks <= unit.terms.max_ticks, "E_BAD_TICKS");
         if let Some(list) = &unit.terms.allowlist {
             require!(list.contains(&tenant), "E_NOT_ALLOWED");
+        }
+        if !unit.terms.needs_approval {
+            assert_vacant(&unit, tenant.as_str());
         }
         let rent = unit
             .terms
@@ -491,7 +507,14 @@ impl Sublet {
         let signature = hex::decode(payer_signature.trim_start_matches("0x"))
             .unwrap_or_else(|_| refuse("E_BAD_SIGNATURE"));
         let signer = evm::recover_signer(&message, &signature).unwrap_or_else(|r| refuse(r.code()));
-        require!(signer == transfer.from, evm::Refusal::WrongPayer.code());
+        if !cfg!(feature = "dev-any-payer") {
+            require!(signer == transfer.from, evm::Refusal::WrongPayer.code());
+        }
+
+        // A payment that finds the unit occupied is refused before it is marked spent, so the
+        // tenant can claim it once the unit is free.
+        let tenant = format!("0x{}", hex::encode(transfer.from));
+        assert_vacant(&unit, &tenant);
 
         let spent = spent_key(chain, &log.transaction_hash, log.log_index);
         require!(self.spent.insert(spent), "E_PAYMENT_ALREADY_USED");
@@ -500,7 +523,7 @@ impl Sublet {
         let payer = env::predecessor_account_id();
         let id = self.open_lease(
             unit_id,
-            format!("0x{}", hex::encode(transfer.from)),
+            tenant,
             subject,
             ticks,
             source_address,
@@ -598,13 +621,14 @@ impl Sublet {
         let issued = issued?;
 
         if let Some(unit) = self.units.get_mut(&issued.unit) {
-            let renewal = unit.last_tenant.as_deref() == Some(issued.tenant.as_str())
-                && issued.valid_after.0 <= unit.last_end + u64::from(unit.terms.tick_secs);
+            let renewal = unit.tenant.as_deref() == Some(issued.tenant.as_str())
+                && issued.valid_after.0 <= unit.tenant_until + u64::from(unit.terms.tick_secs);
             unit.leases += 1;
             unit.renewals += u64::from(renewal);
             unit.ticks_sold += u64::from(issued.ticks);
-            unit.last_tenant = Some(issued.tenant.clone());
-            unit.last_end = issued.valid_before.0;
+            unit.tenant = Some(issued.tenant.clone());
+            unit.tenant_until = issued.valid_before.0;
+            unit.in_flight = None;
         }
 
         if let Paid::Near { payer, rent, change } = &issued.paid {
@@ -635,6 +659,7 @@ impl Sublet {
         About {
             name: "sublet".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
+            build: if cfg!(feature = "dev-any-payer") { "dev-any-payer" } else { "release" }.to_string(),
             mpc: self.mpc.clone(),
             sign_domain: self.sign_domain,
             foreign_domain: self.foreign_domain,
@@ -685,6 +710,13 @@ impl Sublet {
     }
 }
 
+/// Tenants share one Unix user, so they could read or kill each other's work. A tenant renewing
+/// their own lease is welcome. Anyone else waits until it ends.
+fn assert_vacant(unit: &Unit, tenant: &str) {
+    let held_by_another = now_secs() < unit.tenant_until && unit.tenant.as_deref() != Some(tenant);
+    require!(!held_by_another, "E_OCCUPIED");
+}
+
 /// The Ed25519 key that signed the current transaction.
 fn signer_key() -> [u8; 32] {
     let key = env::signer_account_pk();
@@ -707,6 +739,8 @@ fn view_unit(id: &str, unit: &Unit) -> UnitView {
         leases: U64(unit.leases),
         renewals: U64(unit.renewals),
         ticks_sold: U64(unit.ticks_sold),
+        occupied_by: unit.tenant.clone(),
+        occupied_until: U64(unit.tenant_until),
     }
 }
 
@@ -722,6 +756,7 @@ impl Sublet {
         let unit = self.units.get(id).cloned().unwrap_or_else(|| refuse("E_NO_UNIT"));
         require!(unit.ca.is_some(), "E_CA_NOT_READY");
         require!(!unit.paused, "E_PAUSED");
+        require!(unit.in_flight.is_none(), "E_BUSY");
         unit
     }
 
@@ -742,6 +777,11 @@ impl Sublet {
     ) -> u64 {
         let id = self.next_lease;
         self.next_lease += 1;
+        if status != LeaseStatus::AwaitingApproval {
+            if let Some(unit) = self.units.get_mut(&unit) {
+                unit.in_flight = Some(id);
+            }
+        }
         self.leases.insert(
             id,
             Lease {
@@ -770,9 +810,12 @@ impl Sublet {
         let mut subject = [0u8; 32];
         hex::decode_to_slice(&lease.subject, &mut subject).unwrap_or_else(|_| refuse("E_BAD_SSH_KEY"));
 
+        // A renewal continues from the current end, so a tenant never loses paid time.
         let now = now_secs();
+        let renewing = now < unit.tenant_until && unit.tenant.as_deref() == Some(lease.tenant.as_str());
+        let start = if renewing { unit.tenant_until } else { now };
         let valid_after = now.saturating_sub(CLOCK_SKEW_SECS);
-        let valid_before = now + u64::from(lease.ticks) * u64::from(unit.terms.tick_secs);
+        let valid_before = start + u64::from(lease.ticks) * u64::from(unit.terms.tick_secs);
 
         let mut seed = env::random_seed();
         seed.extend_from_slice(&id.to_le_bytes());
@@ -820,6 +863,12 @@ impl Sublet {
         let Some(lease) = self.leases.get_mut(&id) else { return };
         lease.status = status;
         let paid = lease.paid.clone();
+        let unit_id = lease.unit.clone();
+        if let Some(unit) = self.units.get_mut(&unit_id) {
+            if unit.in_flight == Some(id) {
+                unit.in_flight = None;
+            }
+        }
         let refund = |to: AccountId, yocto: u128| {
             if yocto > 0 {
                 let _ = Promise::new(to).transfer(NearToken::from_yoctonear(yocto));

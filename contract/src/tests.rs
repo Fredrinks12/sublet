@@ -3,28 +3,46 @@
 
 use super::*;
 use near_sdk::test_utils::VMContextBuilder;
+use ed25519_dalek::{Signer, SigningKey};
 use near_sdk::{testing_env, test_vm_config, PromiseResult, RuntimeFeesConfig};
 
-const CA: [u8; 32] = [7u8; 32];
 const SSH_KEY: &str = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcH tenant";
+const NOW: u64 = 1_800_000_000;
+
+/// Stands in for the key the MPC network holds. Its signatures are real Ed25519.
+fn ca_signer() -> SigningKey {
+    SigningKey::from_bytes(&[7u8; 32])
+}
+
+fn ca() -> [u8; 32] {
+    ca_signer().verifying_key().to_bytes()
+}
 
 fn account(name: &str) -> AccountId {
     name.parse().unwrap()
 }
 
-fn context(predecessor: &str, deposit: NearToken) -> VMContextBuilder {
+fn context_at(predecessor: &str, deposit: NearToken, seconds: u64) -> VMContextBuilder {
     let mut builder = VMContextBuilder::new();
     builder
         .current_account_id(account("sublet.testnet"))
         .signer_account_id(account(predecessor))
         .predecessor_account_id(account(predecessor))
         .attached_deposit(deposit)
-        .block_timestamp(1_800_000_000 * 1_000_000_000);
+        .block_timestamp(seconds * 1_000_000_000);
     builder
+}
+
+fn context(predecessor: &str, deposit: NearToken) -> VMContextBuilder {
+    context_at(predecessor, deposit, NOW)
 }
 
 fn act_as(predecessor: &str, deposit: NearToken) {
     testing_env!(context(predecessor, deposit).build());
+}
+
+fn act_at(predecessor: &str, deposit: NearToken, seconds: u64) {
+    testing_env!(context_at(predecessor, deposit, seconds).build());
 }
 
 fn callback(result: PromiseResult) {
@@ -76,7 +94,7 @@ fn listed(terms: Terms) -> Sublet {
     let mut c = contract();
     act_as("owner.testnet", UNIT_STORAGE_FEE);
     let _ = c.list_unit("box-1".into(), terms);
-    let line = serde_json::to_vec(&format!("ed25519:{}", near_sdk::bs58::encode(CA).into_string())).unwrap();
+    let line = serde_json::to_vec(&format!("ed25519:{}", near_sdk::bs58::encode(ca()).into_string())).unwrap();
     callback(PromiseResult::Successful(line));
     c.on_ca_key("box-1".into(), UNIT_STORAGE_FEE);
     c
@@ -84,6 +102,21 @@ fn listed(terms: Terms) -> Sublet {
 
 fn deposit(rent_millinear: u128) -> NearToken {
     NearToken::from_yoctonear(rent_millinear * 10u128.pow(21) + LEASE_STORAGE_FEE.as_yoctonear())
+}
+
+/// Delivers a genuine signature to the callback, as the MPC network would.
+fn key_cut(c: &mut Sublet, lease: u64) -> Lease {
+    let tbs = b"the certificate body the contract built".to_vec();
+    let signature = ca_signer().sign(&tbs).to_bytes().to_vec();
+    let reply = serde_json::to_vec(&json!({"scheme": "Ed25519", "signature": signature})).unwrap();
+    callback(PromiseResult::Successful(reply));
+    c.on_signed(lease, hex::encode(&tbs)).unwrap()
+}
+
+/// Delivers an MPC failure to the callback.
+fn key_failed(c: &mut Sublet, lease: u64) -> Lease {
+    callback(PromiseResult::Failed);
+    c.on_signed(lease, "00".into()).unwrap()
 }
 
 #[test]
@@ -121,7 +154,7 @@ fn listing_stores_a_usable_trust_line() {
     let view = c.get_unit("box-1".into()).unwrap();
     let line = view.ca_public_key.unwrap();
     assert!(line.starts_with("ssh-ed25519 "));
-    assert_eq!(ssh::parse_public_key(&line), Some(CA));
+    assert_eq!(ssh::parse_public_key(&line), Some(ca()));
 }
 
 #[test]
@@ -437,10 +470,289 @@ fn a_spent_key_is_per_chain_tx_and_log() {
 #[test]
 fn recent_leases_are_newest_first() {
     let mut c = listed(terms());
-    for _ in 0..3 {
+    for id in 1..=3 {
         act_as("tenant.testnet", deposit(100));
         let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+        key_failed(&mut c, id);
     }
     let ids: Vec<u64> = c.recent_leases(Some(2)).iter().map(|l| l.id.0).collect();
     assert_eq!(ids, vec![3, 2]);
+}
+
+const PAYER: &str = "0x7e5f4552091a69125d5dfcb7b8c2659029395bdf";
+/// `personal_sign` of the claim message by PAYER, for `payment()` and `SSH_KEY`.
+const PAYER_SIGNATURE: &str = "0x561823e0b05a8e6e2202d6d136ca8a68cfd4fa63b54ff7b5af24797a5dd49fb15d65c762c6489e0c07c33015d0900572f6cd1a2df8b800e1b494b92bf824bd641c";
+/// The same message signed by a different key, as a front-runner would.
+const ATTACKER_SIGNATURE: &str = "0x54bd2ecfef565407e19736d60b28bbf8ace23ca442a2b36ca875e059b74f1af77b39c415bdf325ac50542d8a41f41aca16737c0b73a43b88b60dc2407276d83c1b";
+
+/// 2.5 ticks of rent paid to the unit's address.
+fn payment() -> EvmLog {
+    let rent = base_rent();
+    EvmLog {
+        removed: false,
+        log_index: 12,
+        transaction_index: 3,
+        transaction_hash: format!("0x{}", "ab".repeat(32)),
+        block_hash: format!("0x{}", "cd".repeat(32)),
+        block_number: 100,
+        address: rent.token,
+        data: format!("0x{:064x}", 250_000u128),
+        topics: vec![
+            format!("0x{}", hex::encode(evm::TRANSFER_TOPIC)),
+            format!("0x{:0>64}", &PAYER[2..]),
+            format!("0x{:0>64}", &rent.pay_to[2..]),
+        ],
+    }
+}
+
+fn claim_with(c: &mut Sublet, ssh_key: &str, signature: &str) {
+    act_as("relayer.testnet", LEASE_STORAGE_FEE);
+    let _ = c.rent_foreign("box-1".into(), EvmChain::Base, payment(), ssh_key.into(), signature.into(), None);
+}
+
+fn expected_hash(c: &Sublet) -> String {
+    c.payment_hash(EvmChain::Base, Finality::Latest, payment())
+}
+
+fn attest(c: &mut Sublet, lease: u64, reply_hash: &str) {
+    let expected = expected_hash(c);
+    let reply = serde_json::to_vec(&json!({"payload_hash": reply_hash, "signature": {"scheme": "Secp256k1"}})).unwrap();
+    callback(PromiseResult::Successful(reply));
+    let _ = c.on_verified(lease, expected);
+}
+
+fn is_spent(c: &Sublet) -> bool {
+    c.is_payment_spent(EvmChain::Base, payment().transaction_hash, 12)
+}
+
+#[test]
+fn eip191_recovery_matches_a_signature_made_by_a_real_wallet() {
+    let key = ssh::parse_public_key(SSH_KEY).unwrap();
+    let message = evm::claim_message("sublet.testnet", "box-1", &key, EvmChain::Base, &payment().transaction_hash, 12);
+    act_as("relayer.testnet", NearToken::from_yoctonear(0));
+    let signature = hex::decode(&PAYER_SIGNATURE[2..]).unwrap();
+    let recovered = evm::recover_signer(&message, &signature).unwrap();
+    assert_eq!(format!("0x{}", hex::encode(recovered)), PAYER);
+}
+
+#[test]
+fn a_signed_payment_starts_verification_and_is_marked_spent() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let lease = c.get_lease(U64(1)).unwrap();
+    assert_eq!(lease.status, LeaseStatus::Verifying);
+    assert_eq!(lease.tenant, PAYER);
+    assert_eq!(lease.ticks, 2);
+    assert!(is_spent(&c));
+}
+
+#[test]
+fn a_matching_attestation_goes_on_to_cut_the_key() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
+    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Cutting);
+}
+
+#[test]
+#[should_panic(expected = "E_WRONG_PAYER")]
+fn a_front_runner_cannot_claim_someone_elses_payment() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, ATTACKER_SIGNATURE);
+}
+
+#[test]
+#[should_panic(expected = "E_WRONG_PAYER")]
+fn a_payers_signature_cannot_be_reused_for_another_ssh_key() {
+    let mut c = listed(foreign_terms());
+    let attackers_key = ssh::public_key_line(&[0x11; 32], "attacker");
+    claim_with(&mut c, &attackers_key, PAYER_SIGNATURE);
+}
+
+#[test]
+#[should_panic(expected = "E_PAYMENT_ALREADY_USED")]
+fn a_payment_cannot_buy_two_leases() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
+    key_cut(&mut c, 1);
+    act_at("relayer.testnet", LEASE_STORAGE_FEE, NOW + 100_000);
+    let _ = c.rent_foreign("box-1".into(), EvmChain::Base, payment(), SSH_KEY.into(), PAYER_SIGNATURE.into(), None);
+}
+
+#[test]
+fn a_mismatched_attestation_issues_nothing_and_frees_the_payment() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    attest(&mut c, 1, &"00".repeat(32));
+    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Failed);
+    assert!(!is_spent(&c));
+}
+
+#[test]
+fn a_network_failure_lets_the_tenant_claim_again() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let expected = expected_hash(&c);
+    callback(PromiseResult::Failed);
+    let _ = c.on_verified(1, expected);
+    assert!(!is_spent(&c));
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    assert_eq!(c.get_lease(U64(2)).unwrap().status, LeaseStatus::Verifying);
+}
+
+#[test]
+fn a_failed_key_after_verification_frees_the_payment() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
+    assert_eq!(key_failed(&mut c, 1).status, LeaseStatus::Failed);
+    assert!(!is_spent(&c));
+}
+
+#[test]
+fn a_payment_that_finds_the_unit_occupied_is_not_burned() {
+    let mut c = listed(foreign_terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_cut(&mut c, 1);
+    act_as("relayer.testnet", LEASE_STORAGE_FEE);
+    let refused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _ = c.rent_foreign("box-1".into(), EvmChain::Base, payment(), SSH_KEY.into(), PAYER_SIGNATURE.into(), None);
+    }));
+    assert!(refused.is_err());
+    assert!(!is_spent(&c));
+    act_at("relayer.testnet", LEASE_STORAGE_FEE, NOW + 300);
+    let _ = c.rent_foreign("box-1".into(), EvmChain::Base, payment(), SSH_KEY.into(), PAYER_SIGNATURE.into(), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().tenant, PAYER);
+}
+
+#[test]
+fn an_overpayment_is_capped_at_the_units_limit() {
+    let mut t = foreign_terms();
+    t.max_ticks = 1;
+    let mut c = listed(t);
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    assert_eq!(c.get_lease(U64(1)).unwrap().ticks, 1);
+}
+
+#[test]
+fn a_release_build_reports_itself() {
+    let c = contract();
+    assert_eq!(c.about().build, "release");
+}
+
+#[test]
+fn a_genuine_signature_becomes_a_certificate() {
+    let mut c = listed(terms());
+    act_as("tenant.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    let lease = key_cut(&mut c, 1);
+    assert_eq!(lease.status, LeaseStatus::Issued);
+    assert!(lease.certificate.unwrap().starts_with("ssh-ed25519-cert-v01@openssh.com "));
+    let unit = c.get_unit("box-1".into()).unwrap();
+    assert_eq!(unit.leases.0, 1);
+    assert_eq!(unit.ticks_sold.0, 1);
+    assert_eq!(unit.occupied_by.as_deref(), Some("tenant.testnet"));
+    assert_eq!(unit.occupied_until.0, NOW + 300);
+}
+
+#[test]
+#[should_panic(expected = "E_OCCUPIED")]
+fn a_second_tenant_is_refused_while_the_unit_is_occupied() {
+    let mut c = listed(terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_cut(&mut c, 1);
+    act_at("second.testnet", deposit(100), NOW + 299);
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+}
+
+#[test]
+fn the_unit_is_free_for_anyone_once_the_lease_ends() {
+    let mut c = listed(terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_cut(&mut c, 1);
+    act_at("second.testnet", deposit(100), NOW + 300);
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().status, LeaseStatus::Cutting);
+}
+
+#[test]
+fn a_renewal_continues_from_the_current_end_and_loses_no_paid_time() {
+    let mut c = listed(terms());
+    act_as("tenant.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_cut(&mut c, 1);
+    act_at("tenant.testnet", deposit(100), NOW + 100);
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().valid_before.0, NOW + 600);
+    key_cut(&mut c, 2);
+    let unit = c.get_unit("box-1".into()).unwrap();
+    assert_eq!(unit.renewals.0, 1);
+    assert_eq!(unit.occupied_until.0, NOW + 600);
+}
+
+#[test]
+#[should_panic(expected = "E_BUSY")]
+fn only_one_key_is_cut_at_a_time() {
+    let mut c = listed(terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("second.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+}
+
+#[test]
+fn a_failed_key_releases_the_unit_for_the_next_tenant() {
+    let mut c = listed(terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_failed(&mut c, 1);
+    assert_eq!(c.get_unit("box-1".into()).unwrap().occupied_until.0, 0);
+    act_as("second.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().tenant, "second.testnet");
+}
+
+#[test]
+#[should_panic(expected = "E_OCCUPIED")]
+fn approval_cannot_place_a_second_tenant_in_an_occupied_unit() {
+    let mut c = listed(approval_terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("second.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    let _ = c.approve(U64(1));
+    key_cut(&mut c, 1);
+    act_at("owner.testnet", NearToken::from_yoctonear(0), NOW + 10);
+    let _ = c.approve(U64(2));
+}
+
+#[test]
+#[should_panic(expected = "E_NOT_AWAITING_APPROVAL")]
+fn a_lease_cannot_be_approved_twice() {
+    let mut c = listed(approval_terms());
+    act_as("agent.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    let _ = c.approve(U64(1));
+    key_cut(&mut c, 1);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    let _ = c.approve(U64(1));
+}
+
+#[test]
+fn a_paused_unit_still_honours_a_key_being_cut() {
+    let mut c = listed(terms());
+    act_as("tenant.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.set_paused("box-1".into(), true);
+    assert_eq!(key_cut(&mut c, 1).status, LeaseStatus::Issued);
 }

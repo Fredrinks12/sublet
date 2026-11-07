@@ -1,0 +1,16 @@
+{
+  "title": "Sunny 2-core Debian, walk-in shell",
+  "blurb": "Stock Debian 13 with stock OpenSSH. Nothing installed for Sublet. One line of sshd_config.",
+  "host": "127.0.0.1",
+  "port": 2222,
+  "principal": "tenant",
+  "command": null,
+  "permit_pty": true,
+  "permit_port_forwarding": false,
+  "tick_secs": 60,
+  "max_ticks": 30,
+  "near_per_tick": "10000000000000000000000",
+  "foreign": [],
+  "allowlist": null,
+  "needs_approval": false
+}

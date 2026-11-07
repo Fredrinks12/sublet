@@ -148,22 +148,28 @@ fn shell_single_quote(s: &str) -> String {
 }
 
 /// OpenSSH checks a certificate's expiry only when a session starts, so a session opened one second
-/// before expiry would otherwise run forever. The contract therefore writes the limit into the
-/// signed `force-command`, computed against the certificate's absolute end time. Because the
-/// command is signed, a tenant cannot edit it.
+/// before expiry would otherwise run forever. The contract therefore writes an eviction into the
+/// signed `force-command`. Because the command is signed, a tenant cannot edit it before it runs.
 ///
-/// With GNU coreutils the timer is the session's parent process, so killing it ends the session.
-/// Elsewhere (BusyBox) it falls back to a POSIX background timer.
+/// It works with any POSIX shell and installs nothing:
+/// - A login records the certificate's end time in a stamp file, if later than the one there. A
+///   renewal is therefore just a login with a newer certificate, and running sessions continue.
+/// - A background watcher sleeps until the stamp's time, then runs `kill -9 -1`, which ends every
+///   process this Unix user owns, including anything started with `nohup` or `setsid`.
+///
+/// The watcher runs as the tenant, so a hostile tenant could kill it and keep an open session
+/// alive. They still cannot open a new one. See docs/THREAT-MODEL.md.
 pub fn session_command(valid_before: u64, owner_command: Option<&str>) -> String {
     let inner = match owner_command {
         Some(cmd) => shell_single_quote(cmd),
         None => "\"${SSH_ORIGINAL_COMMAND:-exec ${SHELL:-/bin/sh} -l}\"".to_string(),
     };
     format!(
-        "r=$(({valid_before}-$(date +%s)));[ \"$r\" -gt 0 ]||exit 77;\
-         if timeout --version 2>/dev/null|grep -q GNU;\
-         then exec timeout --foreground -k 5 \"$r\" sh -c {inner};\
-         else (sleep \"$r\";kill -KILL $$)</dev/null >/dev/null 2>&1 & exec sh -c {inner};fi"
+        "e={valid_before};f=$HOME/.sublet-until;s=$(cat \"$f\" 2>/dev/null);\
+         [ \"$e\" -gt \"${{s:-0}}\" ]&&echo \"$e\">\"$f\";export SUBLET_UNTIL=$e;\
+         (while t=$(($(cat \"$f\")-$(date +%s)));[ \"$t\" -gt 0 ];do sleep \"$t\";done;kill -9 -1)\
+         </dev/null >/dev/null 2>&1 &\
+         exec sh -c {inner}"
     )
 }
 
@@ -226,9 +232,10 @@ mod tests {
     }
 
     #[test]
-    fn session_command_uses_the_absolute_end_time() {
+    fn session_command_uses_the_absolute_end_time_and_evicts_the_whole_user() {
         let cmd = session_command(1_794_055_300, None);
-        assert!(cmd.starts_with("r=$((1794055300-$(date +%s)))"));
+        assert!(cmd.starts_with("e=1794055300;"));
+        assert!(cmd.contains("kill -9 -1"));
         assert!(cmd.contains("SSH_ORIGINAL_COMMAND"));
     }
 

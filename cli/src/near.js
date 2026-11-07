@@ -3,11 +3,11 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { Account, JsonRpcProvider, KeyPairSigner, actions } from 'near-api-js';
+import { Account, FailoverRpcProvider, JsonRpcProvider, KeyPairSigner, actions } from 'near-api-js';
 
 export const NETWORKS = {
   testnet: {
-    rpc: ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'],
+    rpc: ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org', 'https://rpc.testnet.fastnear.com'],
     mpc: 'v1.signer-prod.testnet',
     explorer: 'https://testnet.nearblocks.io/txns/',
     faucet: 'https://helper.nearprotocol.com/account',
@@ -18,6 +18,23 @@ export const NETWORKS = {
     explorer: 'https://nearblocks.io/txns/',
   },
 };
+
+export { KeyPairSigner, actions };
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Retries transient network failures. A contract refusal is a real answer, so it is not retried. */
+async function withRetries(task, attempts = 4) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await task();
+    } catch (error) {
+      const refused = /E_[A-Z0-9_]+|GuestPanic|does not exist|MethodNotFound/.test(String(error?.message ?? error));
+      if (refused || attempt >= attempts) throw error;
+      await sleep(500 * 2 ** attempt);
+    }
+  }
+}
 
 const TGAS = 1_000_000_000_000n;
 
@@ -34,7 +51,7 @@ export class Near {
     this.network = network;
     this.config = NETWORKS[network];
     if (!this.config) throw new Error(`Unknown network ${network}`);
-    this.provider = new JsonRpcProvider({ url: this.config.rpc[0] });
+    this.provider = new FailoverRpcProvider(this.config.rpc.map((url) => new JsonRpcProvider({ url })));
     this.accountId = accountId;
     if (accountId) {
       const key = privateKey ?? loadCredentials(accountId, network);
@@ -63,14 +80,26 @@ export class Near {
   }
 
   async view(contractId, method, args = {}) {
-    return this.provider.callFunction({ contractId, method, args });
+    return withRetries(async () => {
+      const result = await this.rpc('query', {
+        request_type: 'call_function',
+        finality: 'optimistic',
+        account_id: contractId,
+        method_name: method,
+        args_base64: Buffer.from(JSON.stringify(args)).toString('base64'),
+      });
+      if (result.error) throw new Error(result.error);
+      return JSON.parse(Buffer.from(result.result).toString('utf8'));
+    });
   }
 
   /** Submits a transaction and returns its hash without waiting for receipts. */
   async submit(receiverId, callActions) {
-    const signed = await this.account.createSignedTransaction({ receiverId, actions: callActions });
-    const sent = await this.provider.sendTransactionUntil(signed, 'INCLUDED');
-    return sent.transaction?.hash ?? sent.transaction_outcome?.id;
+    return withRetries(async () => {
+      const signed = await this.account.createSignedTransaction({ receiverId, actions: callActions });
+      const sent = await this.provider.sendTransactionUntil(signed, 'INCLUDED');
+      return sent.transaction?.hash ?? sent.transaction_outcome?.id;
+    });
   }
 
   /** Polls until the transaction and all its receipts have finished. */
