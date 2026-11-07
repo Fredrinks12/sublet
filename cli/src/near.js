@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { Account, FailoverRpcProvider, JsonRpcProvider, KeyPairSigner, actions } from 'near-api-js';
+import { Account, FailoverRpcProvider, JsonRpcProvider, KeyPair, KeyPairSigner, actions } from 'near-api-js';
 
 export const NETWORKS = {
   testnet: {
@@ -19,7 +19,7 @@ export const NETWORKS = {
   },
 };
 
-export { KeyPairSigner, actions };
+export { KeyPair, KeyPairSigner, actions };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -68,6 +68,7 @@ const terms = {
   port: 2222,
   principal: 'tenant',
   command: null,
+  evict_user: true,
   permit_pty: true,
   permit_port_forwarding: false,
   tick_secs: 60,

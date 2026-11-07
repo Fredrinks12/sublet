@@ -64,6 +64,7 @@ fn terms() -> Terms {
         port: 22,
         principal: "tenant".into(),
         command: None,
+        evict_user: true,
         permit_pty: true,
         permit_port_forwarding: false,
         tick_secs: 300,
@@ -125,6 +126,86 @@ fn unit_ids_are_restricted() {
     let mut c = contract();
     act_as("owner.testnet", UNIT_STORAGE_FEE);
     let _ = c.list_unit("Bad Id!".into(), terms());
+}
+
+#[test]
+#[should_panic(expected = "E_USER_ALREADY_LISTED")]
+fn an_owner_cannot_list_one_unix_user_twice() {
+    let mut c = listed(terms());
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-2".into(), terms());
+}
+
+#[test]
+fn a_second_user_on_the_same_server_is_a_separate_unit() {
+    let mut c = listed(terms());
+    let mut t = terms();
+    t.principal = "tenant2".into();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-2".into(), t);
+    assert!(c.get_unit("box-2".into()).is_some());
+}
+
+#[test]
+fn nobody_can_block_a_strangers_address_by_listing_it_first() {
+    let mut c = listed(terms());
+    act_as("squatter.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("squatted".into(), terms());
+    assert!(c.get_unit("squatted".into()).is_some());
+}
+
+#[test]
+fn delisting_frees_the_seat() {
+    let mut c = listed(terms());
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.delist_unit("box-1".into());
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-2".into(), terms());
+    assert!(c.get_unit("box-2".into()).is_some());
+}
+
+#[test]
+#[should_panic(expected = "E_USER_ALREADY_LISTED")]
+fn terms_cannot_move_a_unit_onto_a_listed_user() {
+    let mut c = listed(terms());
+    let mut t = terms();
+    t.principal = "tenant2".into();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-2".into(), t);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.update_terms("box-2".into(), terms());
+}
+
+#[test]
+fn a_failed_key_derivation_frees_the_seat() {
+    let mut c = contract();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-1".into(), terms());
+    callback(PromiseResult::Failed);
+    c.on_ca_key("box-1".into(), UNIT_STORAGE_FEE);
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-1".into(), terms());
+    assert!(c.get_unit("box-1".into()).is_some());
+}
+
+#[test]
+#[should_panic(expected = "E_ROOT_NOT_ALLOWED")]
+fn a_machine_cannot_be_let_as_root() {
+    let mut t = terms();
+    t.principal = "root".into();
+    let mut c = contract();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-1".into(), t);
+}
+
+#[test]
+#[should_panic(expected = "E_ROOT_NOT_ALLOWED")]
+fn terms_cannot_be_changed_to_root_later() {
+    let mut c = listed(terms());
+    let mut t = terms();
+    t.principal = "root".into();
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.update_terms("box-1".into(), t);
 }
 
 #[test]

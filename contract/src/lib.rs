@@ -47,6 +47,7 @@ enum StorageKey {
     Units,
     Leases,
     Spent,
+    Seats,
 }
 
 /// A price in a token on another chain, paid straight to the owner's address there.
@@ -76,6 +77,9 @@ pub struct Terms {
     pub principal: String,
     /// When set, the tenant can run only this command. Enforced by OpenSSH.
     pub command: Option<String>,
+    /// When true, a lease's end kills every process of `principal`, including `nohup` and `setsid`
+    /// jobs. Set this only for a Unix user kept for tenants, never for an account you log in with.
+    pub evict_user: bool,
     pub permit_pty: bool,
     pub permit_port_forwarding: bool,
     /// Length of one unit of rent. A certificate lasts `ticks * tick_secs`.
@@ -183,6 +187,8 @@ pub struct Sublet {
     leases: LookupMap<u64, Lease>,
     next_lease: u64,
     spent: LookupSet<[u8; 32]>,
+    /// Each owner's listed host, port and Unix user. See `seat_key`.
+    seats: LookupSet<[u8; 32]>,
 }
 
 fn refuse(code: &str) -> ! {
@@ -229,6 +235,7 @@ fn validate_terms(t: &Terms) {
     require!(t.blurb.len() <= 280, "E_BAD_BLURB");
     require!(!t.host.is_empty() && t.host.len() <= 253, "E_BAD_HOST");
     require!(valid_principal(&t.principal), "E_BAD_PRINCIPAL");
+    require!(t.principal != "root", "E_ROOT_NOT_ALLOWED");
     require!(t.command.as_ref().map_or(true, |c| !c.is_empty() && c.len() <= 300), "E_BAD_COMMAND");
     require!((30..=86_400).contains(&t.tick_secs), "E_BAD_TICK");
     require!((1..=1_000).contains(&t.max_ticks), "E_BAD_MAX_TICKS");
@@ -267,6 +274,13 @@ fn ca_path(owner: &AccountId, unit_id: &str) -> String {
     format!("unit/{owner}/{unit_id}")
 }
 
+/// Exclusive occupancy is per unit, and the eviction timer is per Unix user, so two units on one
+/// user would share a tenant's files and each other's timers. Scoped to the owner, because a global
+/// check would let anyone block a stranger's real address by listing it first.
+fn seat_key(owner: &AccountId, terms: &Terms) -> [u8; 32] {
+    env::sha256_array(format!("{owner}|{}|{}|{}", terms.host, terms.port, terms.principal).into_bytes())
+}
+
 fn spent_key(chain: EvmChain, tx: &str, log_index: u64) -> [u8; 32] {
     env::sha256_array(format!("{}:{tx}:{log_index}", chain.name()).into_bytes())
 }
@@ -283,6 +297,7 @@ impl Sublet {
             leases: LookupMap::new(StorageKey::Leases),
             next_lease: 1,
             spent: LookupSet::new(StorageKey::Spent),
+            seats: LookupSet::new(StorageKey::Seats),
         }
     }
 
@@ -298,6 +313,7 @@ impl Sublet {
         validate_terms(&terms);
 
         let owner = env::predecessor_account_id();
+        require!(self.seats.insert(seat_key(&owner, &terms)), "E_USER_ALREADY_LISTED");
         let path = ca_path(&owner, &id);
         self.units.insert(
             id.clone(),
@@ -341,7 +357,9 @@ impl Sublet {
             }
             None => {
                 let owner = unit.owner.clone();
+                let seat = seat_key(&owner, &unit.terms);
                 self.units.remove(&id);
+                self.seats.remove(&seat);
                 let _ = Promise::new(owner).transfer(deposit);
                 None
             }
@@ -351,7 +369,14 @@ impl Sublet {
     pub fn update_terms(&mut self, id: String, terms: Terms) {
         validate_terms(&terms);
         let unit = self.unit_of_caller(&id);
+        let owner = unit.owner.clone();
+        let old_seat = seat_key(&owner, &unit.terms);
+        let new_seat = seat_key(&owner, &terms);
         unit.terms = terms;
+        if old_seat != new_seat {
+            self.seats.remove(&old_seat);
+            require!(self.seats.insert(new_seat), "E_USER_ALREADY_LISTED");
+        }
         event("unit_updated", json!({"unit": id}));
     }
 
@@ -363,8 +388,12 @@ impl Sublet {
     }
 
     pub fn delist_unit(&mut self, id: String) {
-        self.unit_of_caller(&id);
+        let seat = {
+            let unit = self.unit_of_caller(&id);
+            seat_key(&unit.owner, &unit.terms)
+        };
         self.units.remove(&id);
+        self.seats.remove(&seat);
         event("unit_delisted", json!({"unit": id}));
     }
 
@@ -821,7 +850,7 @@ impl Sublet {
         seed.extend_from_slice(&id.to_le_bytes());
         let nonce = env::sha256_array(seed);
 
-        let command = ssh::session_command(valid_before, unit.terms.command.as_deref());
+        let command = ssh::session_command(valid_before, unit.terms.command.as_deref(), unit.terms.evict_user);
         let key_id = format!("sublet:{}:{id}:{}", lease.unit, lease.tenant);
         let tbs = ssh::to_be_signed(&ssh::CertSpec {
             nonce: &nonce,

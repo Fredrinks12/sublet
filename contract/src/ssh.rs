@@ -154,20 +154,24 @@ fn shell_single_quote(s: &str) -> String {
 /// It works with any POSIX shell and installs nothing:
 /// - A login records the certificate's end time in a stamp file, if later than the one there. A
 ///   renewal is therefore just a login with a newer certificate, and running sessions continue.
-/// - A background watcher sleeps until the stamp's time, then runs `kill -9 -1`, which ends every
-///   process this Unix user owns, including anything started with `nohup` or `setsid`.
+/// - A background watcher sleeps until the stamp's time, then evicts the tenant.
+///
+/// With `evict_user`, eviction is `kill -9 -1`: every process this Unix user owns, including
+/// anything started with `nohup` or `setsid`. That is only safe for a user kept for tenants, so it
+/// is the owner's explicit choice. Otherwise only the session's process group is killed.
 ///
 /// The watcher runs as the tenant, so a hostile tenant could kill it and keep an open session
 /// alive. They still cannot open a new one. See docs/THREAT-MODEL.md.
-pub fn session_command(valid_before: u64, owner_command: Option<&str>) -> String {
+pub fn session_command(valid_before: u64, owner_command: Option<&str>, evict_user: bool) -> String {
     let inner = match owner_command {
         Some(cmd) => shell_single_quote(cmd),
         None => "\"${SSH_ORIGINAL_COMMAND:-exec ${SHELL:-/bin/sh} -l}\"".to_string(),
     };
+    let evict = if evict_user { "kill -9 -1" } else { "kill -9 -$$" };
     format!(
         "e={valid_before};f=$HOME/.sublet-until;s=$(cat \"$f\" 2>/dev/null);\
          [ \"$e\" -gt \"${{s:-0}}\" ]&&echo \"$e\">\"$f\";export SUBLET_UNTIL=$e;\
-         (while t=$(($(cat \"$f\")-$(date +%s)));[ \"$t\" -gt 0 ];do sleep \"$t\";done;kill -9 -1)\
+         (while t=$(($(cat \"$f\" 2>/dev/null||echo \"$e\")-$(date +%s)));[ \"$t\" -gt 0 ];do sleep \"$t\";done;{evict})\
          </dev/null >/dev/null 2>&1 &\
          exec sh -c {inner}"
     )
@@ -232,16 +236,23 @@ mod tests {
     }
 
     #[test]
-    fn session_command_uses_the_absolute_end_time_and_evicts_the_whole_user() {
-        let cmd = session_command(1_794_055_300, None);
+    fn session_command_uses_the_absolute_end_time() {
+        let cmd = session_command(1_794_055_300, None, true);
         assert!(cmd.starts_with("e=1794055300;"));
-        assert!(cmd.contains("kill -9 -1"));
         assert!(cmd.contains("SSH_ORIGINAL_COMMAND"));
     }
 
     #[test]
+    fn evicting_a_whole_user_is_opt_in() {
+        assert!(session_command(1, None, true).contains("kill -9 -1)"));
+        let session_only = session_command(1, None, false);
+        assert!(session_only.contains("kill -9 -$$)"));
+        assert!(!session_only.contains("kill -9 -1)"));
+    }
+
+    #[test]
     fn owner_command_cannot_break_out_of_quoting() {
-        let cmd = session_command(1, Some("echo 'hi'; rm -rf /"));
+        let cmd = session_command(1, Some("echo 'hi'; rm -rf /"), true);
         assert!(cmd.contains(r"'echo '\''hi'\''; rm -rf /'"));
         assert!(!cmd.contains("SSH_ORIGINAL_COMMAND"));
     }

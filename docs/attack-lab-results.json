@@ -1,0 +1,233 @@
+{
+  "contract": "cmw6h7jif.sublet-dev-0ekmh.testnet",
+  "run_at": "2026-11-07T14:14:04.478Z",
+  "network": "testnet",
+  "stopped": 26,
+  "total": 28,
+  "results": [
+    {
+      "attack": "Pay less than the rent",
+      "expected": "E_UNDERPAID",
+      "result": "E_UNDERPAID",
+      "stopped": true,
+      "tx": "34ZPoB5qpYsViouDvAXcWG6Kk5GNXT7SzzYT2KSCLFjp",
+      "note": null
+    },
+    {
+      "attack": "Ask for more time than the owner allows",
+      "expected": "E_BAD_TICKS",
+      "result": "E_BAD_TICKS",
+      "stopped": true,
+      "tx": "ChdUe1ufs9HqbcxsSuNYuYtbRcs5QZJzwd7dsgNhvYJ4",
+      "note": null
+    },
+    {
+      "attack": "Rent a machine the owner has paused",
+      "expected": "E_PAUSED",
+      "result": "E_PAUSED",
+      "stopped": true,
+      "tx": "VWR2fE2aBXawziszUBMbc6XVLhpSJ1gxZBWaAwdPXPk",
+      "note": null
+    },
+    {
+      "attack": "Rent a private machine as a stranger",
+      "expected": "E_NOT_ALLOWED",
+      "result": "E_NOT_ALLOWED",
+      "stopped": true,
+      "tx": "6G6EvwB5aZ3UqKuWDZY53bQhv3amPjkmcfymF82G6Kse",
+      "note": null
+    },
+    {
+      "attack": "Smuggle a shell command in as an IP address",
+      "expected": "E_BAD_SOURCE_ADDRESS",
+      "result": "E_BAD_SOURCE_ADDRESS",
+      "stopped": true,
+      "tx": "ByHZYuz9zpQHJ15HK4rMf519rfkitfpEpQ5Suiyv4a2x",
+      "note": null
+    },
+    {
+      "attack": "Rewrite another owner's terms",
+      "expected": "E_NOT_OWNER",
+      "result": "E_NOT_OWNER",
+      "stopped": true,
+      "tx": "5ZaKi7JnBL1eSJL6GzwedeUNtqr1CXtwh2nPAb77Se4M",
+      "note": null
+    },
+    {
+      "attack": "Pause another owner's machine",
+      "expected": "E_NOT_OWNER",
+      "result": "E_NOT_OWNER",
+      "stopped": true,
+      "tx": "GFHaehwUwKv11tiZhocMn8tnqTM8UYV6j4xZJnUUJREu",
+      "note": null
+    },
+    {
+      "attack": "Delist another owner's machine",
+      "expected": "E_NOT_OWNER",
+      "result": "E_NOT_OWNER",
+      "stopped": true,
+      "tx": "DhbCijWtKDAfCUg1To416aDATcEdHAUaAPS1jHuDRCKk",
+      "note": null
+    },
+    {
+      "attack": "Take over a listed machine's name",
+      "expected": "E_UNIT_EXISTS",
+      "result": "E_UNIT_EXISTS",
+      "stopped": true,
+      "tx": "9QmiAi7rXLAQRyMUqhS9NwWnrBEe35Ah9yRnaFruSxs8",
+      "note": null
+    },
+    {
+      "attack": "Approve your own request",
+      "expected": "E_NOT_OWNER",
+      "result": "E_NOT_OWNER",
+      "stopped": true,
+      "tx": "Gq6vSo3dvcggfVLjis6mc1ZcL1jYEMquEFNi8vAkhEau",
+      "note": null
+    },
+    {
+      "attack": "Cancel someone else's request",
+      "expected": "E_NOT_TENANT",
+      "result": "E_NOT_TENANT",
+      "stopped": true,
+      "tx": "5nmPYSv5f46tH3ZbfEYhTvXhQ2k7i1dpQpyi8yY1TNdX",
+      "note": null
+    },
+    {
+      "attack": "Call the signing callback directly, to forge a certificate",
+      "expected": "Method on_signed is private",
+      "result": "Method on_signed is private",
+      "stopped": true,
+      "tx": "GoaakMMxWCEuriZ2X5YZgHViRfav77u3P31rWiPJrxPa",
+      "note": null
+    },
+    {
+      "attack": "Claim a stranger's real payment for your own key",
+      "expected": "E_WRONG_PAYER",
+      "result": "E_WRONG_PAYER",
+      "stopped": true,
+      "tx": "9WgPN9JMhN5UR1cUM2SdaKBQG6mfrLkBUvuHyHezeicu",
+      "note": null
+    },
+    {
+      "attack": "Claim a payment made in another token",
+      "expected": "E_WRONG_TOKEN",
+      "result": "E_WRONG_TOKEN",
+      "stopped": true,
+      "tx": "J4K1W3AajeF8ctQKiLKB7LtQoDecFiUyCrUanwGtgPsc",
+      "note": null
+    },
+    {
+      "attack": "Claim a payment sent to someone else",
+      "expected": "E_WRONG_RECIPIENT",
+      "result": "E_WRONG_RECIPIENT",
+      "stopped": true,
+      "tx": "EbvhC1npjHRoGyMVu28EFJhfbjRMbQN1cB8R5nP7ojWU",
+      "note": null
+    },
+    {
+      "attack": "Pass off a different event as a transfer",
+      "expected": "E_NOT_A_TRANSFER",
+      "result": "E_NOT_A_TRANSFER",
+      "stopped": true,
+      "tx": "3BCHyfQaPkGqb7b4ugyCaqmn24uvrRUQ29za8yVAcmc7",
+      "note": null
+    },
+    {
+      "attack": "Claim on a chain the owner does not accept",
+      "expected": "E_CHAIN_NOT_ACCEPTED",
+      "result": "E_CHAIN_NOT_ACCEPTED",
+      "stopped": true,
+      "tx": "6bGvAPAPmoesL23MWEwkRsZv8ovmEpexinKjZcfzouAj",
+      "note": null
+    },
+    {
+      "attack": "Log in with no lease",
+      "expected": "Permission denied",
+      "result": "Permission denied",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Rent a machine someone else holds",
+      "expected": "E_OCCUPIED",
+      "result": "E_OCCUPIED",
+      "stopped": true,
+      "tx": "Eyu3dB6uY15Hn6SVVtK4GpjMgFtRnHEdZUgiqerTvryJ",
+      "note": null
+    },
+    {
+      "attack": "Copy a tenant's public certificate from the chain and use it",
+      "expected": "Permission denied",
+      "result": "Permission denied",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Edit a certificate to last another year",
+      "expected": "Permission denied",
+      "result": "Permission denied",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Use a key cut for one machine on another",
+      "expected": "Permission denied",
+      "result": "Permission denied",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Open a port forward the owner did not allow",
+      "expected": "Forwarding refused",
+      "result": "exit 0: ",
+      "stopped": false,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Run your own command on a fixed-command machine",
+      "expected": "The owner's command ran instead",
+      "result": "The owner's command ran instead",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Inject a command past the fixed command",
+      "expected": "The owner's command ran instead",
+      "result": "The owner's command ran instead",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Leave nohup and setsid processes running past the end",
+      "expected": "All processes killed",
+      "result": "Survived: sleep 7\nsleep 9",
+      "stopped": false,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Log back in after the lease ends",
+      "expected": "Permission denied",
+      "result": "Permission denied",
+      "stopped": true,
+      "tx": null,
+      "note": null
+    },
+    {
+      "attack": "Invent a payment that never happened",
+      "expected": "No key cut",
+      "result": "No key cut",
+      "stopped": true,
+      "tx": "GVxzeNFyu7AH5aWqsADJvFjgX9kz5LtGDPFt6iGwdKuf",
+      "note": "The MPC network would not attest it. Lease status Failed after 112s. Payment marked free again: true."
+    }
+  ]
+}

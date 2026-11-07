@@ -1,0 +1,12 @@
+{
+  "name": "sublet-mcp",
+  "version": "0.1.0",
+  "description": "Lets an AI agent find, rent and use a Linux machine from a NEAR contract.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "sublet-mcp": "server.js" },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^3.25.0"
+  }
+}

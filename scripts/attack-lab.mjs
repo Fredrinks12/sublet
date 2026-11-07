@@ -54,6 +54,7 @@ const baseTerms = {
   port: Number(process.env.LAB_PORT ?? 2222),
   principal: 'tenant',
   command: null,
+  evict_user: true,
   permit_pty: false,
   permit_port_forwarding: false,
   tick_secs: 60,
@@ -113,16 +114,18 @@ const contractLog = (log) => ({
 // ---- Set up the lab -----------------------------------------------------------------------------
 
 const stamp = Date.now().toString(36);
+// One Unix user per unit: the contract refuses anything else, and eviction depends on it.
 const openUnit = await list(`lab-open-${stamp}`);
-const fixedUnit = await list(`lab-fixed-${stamp}`, { command: 'echo only-this-command' });
-const otherUnit = await list(`lab-other-${stamp}`);
-const privateUnit = await list(`lab-private-${stamp}`, { allowlist: [env.TENANT] });
-const pausedUnit = await list(`lab-paused-${stamp}`);
-const approvalUnit = await list(`lab-approval-${stamp}`, { needs_approval: true });
+const fixedUnit = await list(`lab-fixed-${stamp}`, { principal: 'tenant2', command: 'echo only-this-command' });
+const otherUnit = await list(`lab-other-${stamp}`, { host: 'a-different-server.example' });
+const privateUnit = await list(`lab-private-${stamp}`, { principal: 'lab-private', allowlist: [env.TENANT] });
+const pausedUnit = await list(`lab-paused-${stamp}`, { principal: 'lab-paused' });
+const approvalUnit = await list(`lab-approval-${stamp}`, { principal: 'lab-approval', needs_approval: true });
 
 const real = await realTransfer();
 const payTo = `0x${real.topics[2].slice(-40)}`;
 const baseUnit = await list(`lab-base-${stamp}`, {
+  principal: 'lab-base',
   near_per_tick: '0',
   foreign: [{ chain: 'Base', token: USDC, pay_to: payTo, amount_per_tick: '1', finality: 'Latest' }],
 });
@@ -134,6 +137,7 @@ const serial = new Serial();
 await serial.connect();
 await serial.login();
 await serial.run(`printf '%s\\n' '${openUnit.ca_public_key}' '${fixedUnit.ca_public_key}' > /etc/ssh/sublet_ca.pub`);
+await serial.run('id tenant2 >/dev/null 2>&1 || useradd -m -s /bin/bash tenant2');
 await serial.run('systemctl reload ssh');
 
 const sshKey = newKeyPair(path.join(scratch, 'k1'), 'lab');
@@ -165,7 +169,13 @@ await refused("Pause another owner's machine", 'E_NOT_OWNER', stranger, 'set_pau
 await refused('Delist another owner\'s machine', 'E_NOT_OWNER', stranger, 'delist_unit', { id: openUnit.id });
 
 await refused('Take over a listed machine\'s name', 'E_UNIT_EXISTS', stranger, 'list_unit',
-  { id: openUnit.id, terms: baseTerms }, { depositYocto: 2n * FEE });
+  { id: openUnit.id, terms: { ...baseTerms, principal: 'squatter' } }, { depositYocto: 2n * FEE });
+
+await refused('List a machine as root', 'E_ROOT_NOT_ALLOWED', stranger, 'list_unit',
+  { id: `lab-root-${stamp}`, terms: { ...baseTerms, principal: 'root' } }, { depositYocto: 2n * FEE });
+
+await refused('List one Unix user twice, so two tenants share it', 'E_USER_ALREADY_LISTED', owner, 'list_unit',
+  { id: `lab-twice-${stamp}`, terms: baseTerms }, { depositYocto: 2n * FEE });
 
 const request = await tenant.call(contract, 'rent', { unit_id: approvalUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { gasTera: 100, depositYocto: 2n * FEE });
 await refused('Approve your own request', 'E_NOT_OWNER', tenant, 'approve', { lease_id: request.value.id });
@@ -258,15 +268,21 @@ fs.rmSync(forged);
 record('Edit a certificate to last another year', 'Permission denied', denied(withForged));
 
 const other = await rentWithNear(tenant, contract, otherUnit.id, 1);
-const crossed = execSsh({ ...leaseConnection(contract, otherUnit, other.lease), knownHosts: known }, 'whoami', 'ssh', 60_000);
+const crossed = execSsh({ ...leaseConnection(contract, otherUnit, other.lease), host: baseTerms.host, knownHosts: known }, 'whoami', 'ssh', 60_000);
 record('Use a key cut for one machine on another', 'Permission denied', crossed.code === 255 ? 'Permission denied' : `exit ${crossed.code}: ${crossed.stdout}`);
 
-const forward = ssh(sshArgs({
+// -L only binds a local port, so it proves nothing. -W opens a forwarded channel on the server, and
+// -R asks the server to listen. Both reach the server's refusal directly.
+const tunnel = ssh(sshArgs({ ...options, extra: ['-o', 'BatchMode=yes', '-W', '127.0.0.1:22'] }));
+record('Tunnel through the machine to another service', 'Forwarding refused',
+  /administratively prohibited/i.test(tunnel.stderr ?? '') ? 'Forwarding refused' : `exit ${tunnel.status}: ${lastLine(tunnel)}`);
+
+const listener = ssh(sshArgs({
   ...options,
-  extra: ['-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-L', '127.0.0.1:18022:127.0.0.1:22'],
+  extra: ['-o', 'BatchMode=yes', '-o', 'ExitOnForwardFailure=yes', '-R', '127.0.0.1:18022:127.0.0.1:22'],
 }).concat('true'));
-record('Open a port forward the owner did not allow', 'Forwarding refused',
-  /forward|administratively prohibited/i.test(forward.stderr ?? '') ? 'Forwarding refused' : `exit ${forward.status}: ${lastLine(forward)}`);
+record('Make the machine listen on a port for you', 'Forwarding refused',
+  /forwarding failed/i.test(listener.stderr ?? '') ? 'Forwarding refused' : `exit ${listener.status}: ${lastLine(listener)}`);
 
 const fixed = await rentWithNear(tenant, contract, fixedUnit.id, 1);
 const ignored = execSsh({ ...leaseConnection(contract, fixedUnit, fixed.lease), knownHosts: known }, 'cat /etc/passwd', 'ssh', 60_000);
