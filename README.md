@@ -81,6 +81,8 @@ cd web && npm ci && npm run dev
 
 Open the page, choose **Rent** on a listing, and confirm. A free testnet account and an SSH key are made in your browser. You should see **Your key is cut**, a countdown, and commands to paste into a terminal. The site has no backend.
 
+The only listing today, `debian-vm`, is a test machine on a private address, so the key is real but those commands will not connect from your computer. To see a real login, run `scripts/judge.mjs` above.
+
 To point it at another deployment, set `VITE_CONTRACT` in `web/.env.local`.
 
 ### Give an AI agent a machine
@@ -125,6 +127,8 @@ node cli/bin/sublet.js doctor <unit>
 
 The contract builds the whole certificate itself, so no caller can influence it beyond choosing their own public key. See [contract/src/ssh.rs](contract/src/ssh.rs).
 
+Sublet leans on all three of the Open Innovation track's hints: **experimental**, because MPC signatures are used on SSH certificates rather than transactions; **chain abstraction**, because one contract accepts payment on other chains and controls servers that know nothing about NEAR; and **build your own**, because the core is its own contract.
+
 ## Why use a contract at all?
 
 Teleport and HashiCorp Vault already issue short-lived SSH certificates. They need an account, a central authority that can mint anything, and an operator you trust. They do not take payment, and they do not work between strangers.
@@ -168,11 +172,15 @@ These are the short answers. [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) has th
 
 Sublet is unaudited and runs on testnet. Rent on other chains needs an EIP-191 signature from the paying address, so contract wallets cannot claim yet. The website supports browser wallets on EVM chains, and its own free testnet account on NEAR, but not NEAR wallets yet.
 
+Some paths have not been run in full. Rent on Base has worked on a test build with the payer check off, but not yet from payment to login on the release contract. The agent example has only run with its fixed script, not a real NEAR AI model. [docs/EVIDENCE.md](docs/EVIDENCE.md) has the full list.
+
 ## Credits
 
 Written during the hackathon window, from 19 October 2026, with no earlier code.
 
-**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64` and `hex`. For tests and the demo videos: `ed25519-dalek`, `puppeteer-core`, `ffmpeg-static`, and `kokoro-js` with the Apache 2.0 Kokoro-82M voice.
+**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64` and `hex`. For tests and the demo videos: `ed25519-dalek`, `puppeteer-core`, `ffmpeg-static`, `kokoro-js` with the Apache 2.0 Kokoro-82M voice, and `@huggingface/transformers` with Whisper, to check the narration.
+
+**Fonts:** Archivo Black, Fraunces, IBM Plex Mono and Source Serif 4, from Google Fonts.
 
 **AI tools:** written with Claude Code.
 

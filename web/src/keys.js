@@ -54,6 +54,14 @@ export function newSshKey(comment = 'sublet-tenant') {
   return { publicLine: line, privateKey: opensshPrivateKey(seed, publicKey, comment) };
 }
 
+/** True for an address only its own network can reach, such as a test machine on a laptop. */
+export function isPrivateHost(host) {
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/);
+  if (!ipv4) return host === 'localhost';
+  const [a, b] = [Number(ipv4[1]), Number(ipv4[2])];
+  return a === 127 || a === 10 || (a === 192 && b === 168) || (a === 172 && b >= 16 && b <= 31);
+}
+
 /** A paste-ready script that saves the key and certificate, then logs in. */
 export function loginScript({ lease, unit, key }) {
   const dir = `~/.sublet/lease-${lease.id}`;

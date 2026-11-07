@@ -1,6 +1,6 @@
 import { CONTRACT, EXPLORER, accessKeys, accountState, listUnit, openPocket, pocket, rent, rentForeign, rpc, view } from './chain.js';
 import { connectWallet, hasWallet, payToken, signClaim, transferLog } from './evm.js';
-import { loginScript, newSshKey } from './keys.js';
+import { isPrivateHost, loginScript, newSshKey } from './keys.js';
 import attacks from './attacks.json';
 import transcript from './transcript.json';
 
@@ -382,6 +382,9 @@ function showKey(unit, lease, key, hash, paymentTx) {
   $('rent-body').replaceChildren(
     el('h2', { id: 'rent-title' }, 'Your key is cut'),
     left,
+    ...(isPrivateHost(unit.terms.host)
+      ? [el('p', { class: 'note' }, 'This machine has a private address, so the login only connects from its own network. The key and the lease are still real.')]
+      : []),
     el('p', { class: 'note' }, 'Paste this into a terminal. It saves your key and certificate, then logs you in with plain ssh.'),
     el('pre', { class: 'script', tabindex: '0' }, script),
     copy,

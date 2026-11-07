@@ -16,3 +16,5 @@ To repeat it, see `scripts/vm/foreign-live.mjs`. The contract's payer check is c
 ## What has not been run
 
 A payment on the release build, from a wallet we control, all the way to a login. It needs Base Sepolia gas and USDC, which only a browser faucet provides. The website's Base payment path has not been run in a real browser wallet for the same reason.
+
+The agent example has only run with its fixed script, not a real NEAR AI model. The GitHub workflows have not run, because the repository is not on GitHub yet. The contract tests have only run on Windows.
