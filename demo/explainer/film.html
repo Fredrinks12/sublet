@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sublet explainer</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f3eee1;
+        --deep: #e8e0cd;
+        --ink: #1b1915;
+        --soft: #5b5447;
+        --hair: #b9ae97;
+        --stamp: #bf2f1b;
+        --vacant: #2b6a4c;
+        --term: #17160f;
+        --term-fg: #e9e2d0;
+        --term-dim: #8f8875;
+        --good: #a4d38e;
+        --bad: #ff8d76;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: 'Source Serif 4', Georgia, serif; }
+      #stage { position: absolute; inset: 0 0 92px 0; overflow: hidden; }
+      .scene { position: absolute; inset: 0; display: none; }
+      .scene.dark { background: var(--term); color: var(--term-fg); }
+      .abs { position: absolute; }
+      .mark { position: absolute; top: 20px; left: 44px; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 26px; letter-spacing: -0.03em; }
+      .big { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 64px; line-height: 1.04; letter-spacing: -0.028em; font-variation-settings: 'opsz' 144; }
+      .mid { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 34px; line-height: 1.15; letter-spacing: -0.012em; }
+      .body { font-size: 25px; line-height: 1.3; }
+      .soft { color: var(--soft); }
+      .mono { font-family: 'IBM Plex Mono', Consolas, monospace; }
+      .no { color: var(--stamp); font-weight: 600; }
+      .yes { color: var(--vacant); font-weight: 600; }
+
+      #caption { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; padding: 0 56px; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--paper); border-top: 3px double var(--ink); font-size: 27px; line-height: 1.2; font-weight: 600; color: var(--ink); }
+
+      .node { position: absolute; top: 74px; width: 268px; height: 128px; padding: 14px 16px; background: var(--paper); border: 2px solid var(--ink); }
+      .node h3 { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 27px; line-height: 1.05; letter-spacing: -0.015em; }
+      .node p { margin-top: 5px; font-size: 19px; line-height: 1.2; color: var(--soft); }
+      .node.on { border-color: var(--stamp); box-shadow: 0 0 0 2px var(--stamp); }
+      .dots { position: absolute; left: 16px; bottom: 12px; display: grid; grid-template-columns: repeat(16, 10px); gap: 4px; }
+      .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--hair); }
+
+      .token { position: absolute; padding: 5px 14px; background: var(--stamp); color: #fff8ee; font-family: 'Archivo Black', Impact, sans-serif; font-size: 18px; letter-spacing: 0.02em; white-space: nowrap; }
+      .cert { position: absolute; width: 268px; padding: 12px 14px 14px; background: #fffdf8; border: 2px solid var(--ink); box-shadow: 5px 6px 0 rgb(0 0 0 / 0.14); }
+      .cert h4 { font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 15px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; color: var(--soft); margin-bottom: 7px; }
+      .cert div { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 20px; border-top: 1px solid var(--hair); }
+      .cert b { font-weight: 600; }
+      .sealed { position: absolute; right: 8px; top: 5px; padding: 2px 9px; border: 3px solid var(--stamp); color: var(--stamp); font-family: 'Archivo Black', Impact, sans-serif; font-size: 22px; text-transform: uppercase; rotate: -7deg; background: rgb(255 253 248 / 0.84); }
+      .line-h { position: absolute; height: 4px; background: var(--ink); transform-origin: left center; }
+      .line-v { position: absolute; width: 4px; background: var(--ink); transform-origin: center bottom; }
+
+      .board { position: absolute; right: 80px; top: 120px; width: 330px; rotate: 1.6deg; }
+      .face { background: #fffdf8; border: 2px solid #1b1915; box-shadow: 6px 7px 0 rgb(0 0 0 / 0.16); }
+      .band { background: #bf2f1b; color: #fff8ee; font-family: 'Archivo Black', Impact, sans-serif; font-size: 68px; line-height: 1; text-align: center; padding: 20px 8px 18px; text-transform: uppercase; }
+      .small { text-align: center; padding: 13px 10px; font-size: 21px; color: #1b1915; }
+      .agent { border-top: 2px solid #1b1915; padding: 8px; text-align: center; font-family: 'Archivo Black', Impact, sans-serif; font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: #1b1915; }
+      .post { width: 30px; height: 66px; margin: 0 auto; background: #7a5c38; border-inline: 2px solid #1b1915; }
+
+      .steps { position: absolute; left: 44px; top: 96px; width: 500px; }
+      .steps li { list-style: none; display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--hair); font-size: 26px; line-height: 1.22; }
+      .steps b { font-family: 'Fraunces', Georgia, serif; font-weight: 900; color: var(--stamp); font-size: 34px; line-height: 1; }
+      .term { position: absolute; background: var(--term); color: var(--term-fg); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 19px; line-height: 1.5; padding: 18px 20px; white-space: pre-wrap; word-break: break-all; }
+      .term .hl { background: var(--stamp); color: #fff8ee; }
+      .term .dim { color: var(--term-dim); }
+      .term .good { color: var(--good); }
+
+      pre#lease { position: absolute; left: 40px; right: 40px; top: 24px; font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 22px; line-height: 1.42; white-space: pre-wrap; word-break: break-word; }
+      pre#lease .good { color: var(--good); } pre#lease .bad { color: var(--bad); } pre#lease .dim { color: var(--term-dim); }
+      .note { position: absolute; right: 40px; top: 300px; width: 400px; padding: 14px 16px; background: var(--paper); color: var(--ink); font-size: 22px; line-height: 1.25; border: 2px solid var(--stamp); }
+      .note b { display: block; font-family: 'Fraunces', Georgia, serif; font-size: 25px; margin-bottom: 3px; }
+
+      .lane { position: absolute; left: 44px; right: 44px; border: 1px solid var(--hair); }
+      .lane > span { position: absolute; top: 8px; left: 12px; font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 15px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--soft); }
+      .stamp { position: absolute; padding: 3px 12px; border: 4px solid var(--stamp); color: var(--stamp); font-family: 'Archivo Black', Impact, sans-serif; font-size: 27px; text-transform: uppercase; rotate: -5deg; background: rgb(243 238 225 / 0.88); }
+
+      .stats { position: absolute; left: 56px; right: 56px; top: 64px; }
+      .stats li { list-style: none; display: flex; align-items: baseline; gap: 24px; padding: 15px 0; border-bottom: 1px solid var(--hair); font-size: 28px; line-height: 1.2; }
+      .stats b { flex: none; width: 170px; text-align: right; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 54px; color: var(--stamp); letter-spacing: -0.02em; }
+      .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+      .chips code { padding: 3px 9px; background: var(--deep); font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 20px; }
+      .wordmark { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 150px; line-height: 1; letter-spacing: -0.035em; font-variation-settings: 'opsz' 144; }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <section class="scene" data-scene="problem">
+        <span class="mark">Sublet</span>
+        <div class="abs" style="left: 56px; top: 112px; width: 1160px">
+          <p class="big" data-at="0">An AI agent can hold money.</p>
+          <p class="big" data-at="0@0.5" style="margin-top: 6px">It can't open an AWS account.</p>
+          <p class="body soft" data-at="0@0.7" style="margin-top: 14px">No card. No passport. No phone number.</p>
+          <p class="mid" data-at="1" style="margin-top: 46px">You have an idle server. A stranger needs it for ten minutes.</p>
+          <p class="body soft" data-at="1@0.55" style="margin-top: 10px">Today that means a key that never expires, or a marketplace's daemon.</p>
+        </div>
+      </section>
+
+      <section class="scene" data-scene="intro">
+        <span class="mark">Sublet</span>
+        <div class="abs" style="left: 56px; top: 150px; width: 740px">
+          <p class="big" data-at="3">Rent out a Linux machine by the minute.</p>
+          <p class="body" data-at="3@0.65" style="margin-top: 18px">Nothing installed on it. No daemon. No wallet on the server.</p>
+        </div>
+        <div class="board" data-at="2">
+          <div class="face">
+            <div class="band">To let</div>
+            <p class="small">Any Linux machine</p>
+            <p class="agent">Apply to the contract</p>
+          </div>
+          <div class="post"></div>
+        </div>
+      </section>
+
+      <section class="scene" data-scene="owner">
+        <span class="mark">The owner</span>
+        <ol class="steps">
+          <li data-at="5"><b>1</b><span>List the machine on a NEAR contract.</span></li>
+          <li data-at="6"><b>2</b><span>NEAR's MPC network derives a key only this contract can use.</span></li>
+          <li data-at="7"><b>3</b><span>Trust that key, in one line of SSH config.</span></li>
+        </ol>
+        <div class="term" style="left: 580px; top: 96px; width: 656px; height: 356px"><span data-at="5">$ sublet list debian-vm terms.json
+Listed debian-vm.
+</span><span data-at="6" class="good"><span id="trust"></span>
+</span><span data-at="7">
+$ cat /etc/ssh/sshd_config.d/sublet.conf
+<span class="hl">TrustedUserCAKeys /etc/ssh/sublet_ca.pub</span>
+</span></div>
+        <p class="mid abs" data-at="8" style="left: 44px; top: 492px; width: 1190px">That's the whole setup. No package, no daemon, no wallet.</p>
+      </section>
+
+      <section class="scene" data-scene="flow">
+        <span class="mark">One lease</span>
+        <div class="node" id="n-tenant" style="left: 44px"><h3>Tenant</h3><p>A person, or an AI agent</p></div>
+        <div class="node" id="n-contract" style="left: 352px"><h3>NEAR contract</h3><p>Holds the owner's public terms</p></div>
+        <div class="node" id="n-mpc" style="left: 660px">
+          <h3>MPC network</h3><p>Many independent nodes</p>
+          <div class="dots" id="dots"></div>
+        </div>
+        <div class="node" id="n-server" style="left: 968px"><h3>Your server</h3><p>Stock OpenSSH</p></div>
+
+        <div class="token" id="rent">Rent</div>
+        <p class="abs yes" data-at="10" style="left: 366px; top: 212px; font-size: 22px">Price checked</p>
+
+        <div class="cert" id="cert" style="left: 352px; top: 252px">
+          <h4>Certificate</h4>
+          <div data-at="11@0.45"><span>Who</span><b>tenant</b></div>
+          <div data-at="11@0.68"><span>How long</span><b>2 minutes</b></div>
+          <div data-at="11@0.86"><span>Can run</span><b>a shell</b></div>
+          <span class="sealed" id="sealed">Signed</span>
+        </div>
+
+        <p class="abs mid" data-at="13" style="left: 660px; top: 462px; width: 570px; font-size: 27px" data-until="13">Each node holds a share. None holds the key.</p>
+
+        <div class="line-v" id="ssh-up" style="left: 176px; top: 420px; height: 72px"></div>
+        <div class="line-h" id="ssh-h" style="left: 176px; top: 490px; width: 1038px"></div>
+        <div class="line-v" id="ssh-v" style="left: 1210px; top: 202px; height: 292px"></div>
+        <p class="abs mono" id="ssh-label" data-at="14@0.3" style="left: 430px; top: 454px; font-size: 22px; font-weight: 600">$ ssh tenant@your-server</p>
+
+        <div class="abs" data-at="15" style="left: 968px; top: 216px; width: 268px">
+          <p class="yes" style="font-size: 25px">Signature OK</p>
+          <p class="yes" style="font-size: 25px">Door open</p>
+        </div>
+        <span class="stamp" data-at="16" style="left: 760px; top: 340px; rotate: -4deg">No blockchain here</span>
+      </section>
+
+      <section class="scene" data-scene="base">
+        <span class="mark">Paying on another chain</span>
+        <div class="lane" style="top: 66px; height: 216px"><span>Base</span></div>
+        <div class="lane" style="top: 302px; height: 216px"><span>NEAR</span></div>
+        <div class="node" style="left: 110px; top: 110px"><h3>Tenant's wallet</h3><p>Holds USDC on Base</p></div>
+        <div class="node" style="left: 900px; top: 110px"><h3>Owner's address</h3><p>Rent lands here</p></div>
+        <div class="token" id="usdc">USDC</div>
+        <div class="node" style="left: 110px; top: 346px"><h3>NEAR contract</h3><p id="held">Holds none of it</p></div>
+        <div class="node" id="n-mpc2" style="left: 900px; top: 346px"><h3>MPC network</h3><p>Reads Base itself</p></div>
+        <div class="line-v" id="read-v" style="left: 1032px; top: 238px; height: 108px"></div>
+        <p class="abs" data-at="19@0.25" style="left: 1046px; top: 268px; font-size: 21px; font-weight: 600">reads the payment</p>
+        <div class="line-h" id="read-h" style="left: 378px; top: 408px; width: 522px"></div>
+        <p class="abs" data-at="19@0.62" style="left: 520px; top: 374px; font-size: 21px; font-weight: 600">confirmed, so the key is cut</p>
+        <span class="stamp" data-at="19@0.42" style="left: 520px; top: 238px; rotate: -4deg">No bridge</span>
+      </section>
+
+      <section class="scene dark" data-scene="demo">
+        <pre id="lease"></pre>
+        <div class="note" data-at="23" data-until="24"><b>Signed into the certificate</b>A timer that ends the session at the lease's end time.</div>
+      </section>
+
+      <section class="scene" data-scene="proof">
+        <ul class="stats">
+          <li data-at="25"><b id="keys"></b><span>access keys on the contract. Nobody can change its code.</span></li>
+          <li data-at="26"><b id="attacks"></b><span>attacks run against it, and all of them stopped.</span></li>
+          <li data-at="27"><b>MCP</b><span>for AI agents:</span><span class="chips"><code>list_machines</code><code>rent_machine</code><code>run_command</code></span></li>
+          <li data-at="28"><b>1</b><span>command to re-check it: <span class="mono" style="font-size: 23px">node scripts/verify-evidence.mjs</span></span></li>
+        </ul>
+        <p class="body soft abs" data-at="28@0.1" style="left: 250px; top: 486px">Unaudited, and on testnet.</p>
+      </section>
+
+      <section class="scene" data-scene="end" style="text-align: center">
+        <div class="abs" style="left: 0; right: 0; top: 150px">
+          <p class="wordmark">Sublet</p>
+          <p class="body" style="margin-top: 14px">Built at NEAR HACKATHON</p>
+          <p class="mono soft" style="margin-top: 12px; font-size: 22px">sublet.testnet</p>
+        </div>
+      </section>
+    </div>
+    <div id="caption"></div>
+
+    <script>
+      const data = window.FILM;
+      const L = data.timeline.lines;
+      const TOTAL = data.timeline.total;
+      window.FILM_LENGTH = TOTAL;
+
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+      const ease = (p) => p * p * (3 - 2 * p);
+      const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+      const span = (i) => L[i].end - L[i].start;
+
+      /** A cue is a line number, optionally "@fraction" of that line or "+seconds" after it starts. */
+      function cue(text) {
+        const match = String(text).match(/^(\d+)(?:@([\d.]+))?(?:\+([\d.]+))?$/);
+        const i = Number(match[1]);
+        return L[i].start + span(i) * Number(match[2] ?? 0) + Number(match[3] ?? 0);
+      }
+
+      const sceneNames = [...new Set(L.map((l) => l.scene))];
+      const sceneTimes = {};
+      sceneNames.forEach((name, n) => {
+        const first = L.find((l) => l.scene === name);
+        const next = sceneNames[n + 1] ? L.find((l) => l.scene === sceneNames[n + 1]).start - 0.35 : TOTAL + 1;
+        sceneTimes[name] = { from: n === 0 ? 0 : first.start - 0.35, to: next };
+      });
+      const scenes = [...document.querySelectorAll('.scene')];
+      const beats = [...document.querySelectorAll('[data-at]')].map((el) => ({
+        el,
+        at: cue(el.dataset.at),
+        until: el.dataset.until ? L[Number(el.dataset.until)].end + 0.2 : Infinity,
+      }));
+
+      $('trust').textContent = `Trust line: ${data.trustLine}`;
+      $('keys').textContent = data.keys;
+      $('attacks').textContent = data.attacks;
+      for (let i = 0; i < 16; i += 1) {
+        const dot = document.createElement('i');
+        dot.className = 'dot';
+        $('dots').append(dot);
+      }
+      const dots = [...$('dots').children];
+
+      // The real transcript. Each entry says which spoken line reveals it.
+      const REVEAL = [21, 21, 22, 22, 22, 22, 22, 22, 22, 22, 23, 24, 24, 24, 24];
+      const FRACTION = [0, 0.45, 0, 0.3, 0.3, 0.4, 0.4, 0.62, 0.8, 0.8, 0.55, 0, 0.32, 0.6, 0.75];
+      const leaseLines = data.transcript.lines.map(({ text, kind }, n) => {
+        const node = document.createElement('span');
+        node.className = kind === 'cmd' ? '' : kind;
+        node.textContent = `${kind === 'cmd' ? '$ ' : ''}${text}\n`;
+        $('lease').append(node);
+        return { node, at: L[REVEAL[n]].start + span(REVEAL[n]) * FRACTION[n] };
+      });
+
+      function place(el, from, to, t, t0, t1) {
+        const p = ease(clamp((t - t0) / (t1 - t0)));
+        el.style.left = `${from[0] + (to[0] - from[0]) * p}px`;
+        el.style.top = `${from[1] + (to[1] - from[1]) * p}px`;
+      }
+
+      window.seek = (t) => {
+        for (const scene of scenes) {
+          const { from, to } = sceneTimes[scene.dataset.scene];
+          const on = t >= from && t < to;
+          scene.style.display = on ? 'block' : 'none';
+          if (on) scene.style.opacity = clamp((t - from) / 0.3);
+        }
+        for (const { el, at, until } of beats) {
+          const p = clamp((t - at) / 0.32) * (t < until ? 1 : 0);
+          el.style.opacity = p;
+          el.style.translate = `0 ${(1 - ease(p)) * 9}px`;
+        }
+
+        // One lease
+        const f = (i, part = 0) => L[i].start + span(i) * part;
+        $('n-tenant').classList.toggle('on', t >= f(9) && t < f(10));
+        $('n-contract').classList.toggle('on', t >= f(10) && t < f(12));
+        $('n-mpc').classList.toggle('on', t >= f(12) && t < f(14));
+        $('n-server').classList.toggle('on', t >= f(15));
+        const rent = $('rent');
+        rent.style.opacity = t >= f(9, 0.5) && t < f(10, 0.5) ? 1 : 0;
+        place(rent, [150, 214], [450, 214], t, f(9, 0.55), f(9, 0.95));
+        const cert = $('cert');
+        cert.style.opacity = t >= f(11, 0.05) ? 1 : 0;
+        if (t < f(14)) place(cert, [352, 252], [660, 252], t, f(12), f(12, 0.6));
+        else place(cert, [660, 252], [44, 252], t, f(14), f(14, 0.45));
+        $('sealed').style.opacity = t >= f(12, 0.75) ? 1 : 0;
+        dots.forEach((dot, i) => {
+          const lit = t >= f(12, 0.2) + i * 0.09 && i < 11;
+          dot.style.background = lit ? 'var(--stamp)' : 'var(--hair)';
+        });
+        const up = clamp((t - f(14, 0.45)) / 0.25);
+        $('ssh-up').style.scale = `1 ${ease(up)}`;
+        $('ssh-up').style.opacity = up > 0 ? 1 : 0;
+        const h = clamp((t - f(14, 0.5)) / Math.max(0.3, span(14) * 0.4));
+        $('ssh-h').style.scale = `${ease(h)} 1`;
+        $('ssh-h').style.opacity = h > 0 ? 1 : 0;
+        const v = clamp((t - f(14, 0.9)) / 0.4);
+        $('ssh-v').style.scale = `1 ${ease(v)}`;
+        $('ssh-v').style.opacity = v > 0 ? 1 : 0;
+
+        // Paying on another chain
+        const usdc = $('usdc');
+        usdc.style.opacity = t >= f(17, 0.35) ? 1 : 0;
+        place(usdc, [400, 160], [810, 160], t, f(17, 0.4), f(17, 0.92));
+        $('held').style.color = t >= f(18) ? 'var(--stamp)' : 'var(--soft)';
+        const down = clamp((t - f(19, 0.12)) / 0.7);
+        $('read-v').style.scale = `1 ${ease(down)}`;
+        $('read-v').style.opacity = down > 0 ? 1 : 0;
+        $('n-mpc2').classList.toggle('on', t >= f(19, 0.12));
+        const across = clamp((t - f(19, 0.58)) / 0.7);
+        $('read-h').style.transformOrigin = 'right center';
+        $('read-h').style.scale = `${ease(across)} 1`;
+        $('read-h').style.opacity = across > 0 ? 1 : 0;
+
+        for (const { node, at } of leaseLines) node.style.visibility = t >= at ? 'visible' : 'hidden';
+
+        const line = L.find((l) => t >= l.start - 0.05 && t < l.end + 0.22);
+        $('caption').textContent = line ? line.text : '';
+      };
+      window.seek(0);
+    </script>
+  </body>
+</html>

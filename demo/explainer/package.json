@@ -1,0 +1,16 @@
+{
+  "name": "sublet-explainer",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "voice": "node voice.mjs",
+    "check": "node check-voice.mjs",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "kokoro-js": "^1.2.1",
+    "puppeteer-core": "^25.16.0"
+  }
+}

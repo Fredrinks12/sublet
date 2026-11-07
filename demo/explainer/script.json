@@ -1,0 +1,48 @@
+[
+  { "scene": "problem", "lines": [
+    "An AI agent can hold money, but it can't open an AWS account.",
+    "And if you own an idle server, there's no simple way to let a stranger use it for ten minutes."
+  ] },
+  { "scene": "intro", "lines": [
+    "Sublet fixes both.",
+    "It rents out any Linux machine by the minute, with nothing installed on it."
+  ] },
+  { "scene": "owner", "lines": [
+    "Here's how it works.",
+    "The owner lists their machine on a NEAR smart contract.",
+    "NEAR's MPC network derives a signing key that only this contract can use.",
+    "The owner adds that key to their server with one line of SSH config.",
+    "That's the whole setup."
+  ] },
+  { "scene": "flow", "lines": [
+    "Now a tenant, a person or an AI agent, wants the machine, so they pay the rent.",
+    "The contract checks the price.",
+    "Then it writes an SSH certificate from the owner's public terms: who can log in, for how long, and what they can run.",
+    "The MPC network signs those exact bytes.",
+    "No single node ever holds the key.",
+    "The tenant logs in with ordinary SSH.",
+    "The server checks the signature by itself.",
+    "It never talks to a blockchain."
+  ] },
+  { "scene": "base", "lines": [
+    "Tenants can also pay in USDC on Base, straight to the owner.",
+    "The contract never touches that money.",
+    "It asks the MPC network to read the payment from Base, with no bridge, and then cuts the key the same way."
+  ] },
+  { "scene": "demo", "lines": [
+    "Here's a real lease on a stock Debian server.",
+    "With no lease, the door is shut.",
+    "Rent it, and SSH works.",
+    "OpenSSH only checks a certificate at login, so the contract signs a timer into it.",
+    "When the time runs out, the session is killed, and the same key is refused."
+  ] },
+  { "scene": "proof", "lines": [
+    "The contract has zero access keys, so nobody can change its code.",
+    "We ran thirty-seven attacks against it, and all of them were stopped.",
+    "AI agents get the same tools through an MCP server.",
+    "It's unaudited and on testnet, and you can re-check the evidence yourself with one command."
+  ] },
+  { "scene": "end", "lines": [
+    "This is Sublet, built at NEAR Hackathon."
+  ] }
+]

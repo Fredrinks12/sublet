@@ -170,7 +170,7 @@ Sublet is unaudited and runs on testnet. Rent on other chains needs an EIP-191 s
 
 Written during the hackathon window, from 19 October 2026, with no earlier code.
 
-**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64` and `hex`. For tests and the demo video: `ed25519-dalek`, `puppeteer-core` and `ffmpeg-static`.
+**Libraries:** `near-sdk`, `near-api-js`, `viem`, `vite`, `@modelcontextprotocol/sdk`, `zod`, `base64` and `hex`. For tests and the demo videos: `ed25519-dalek`, `puppeteer-core`, `ffmpeg-static`, and `kokoro-js` with the Apache 2.0 Kokoro-82M voice.
 
 **AI tools:** written with Claude Code.
 
