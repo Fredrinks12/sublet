@@ -96,7 +96,7 @@ async function main() {
     allowlist: null,
     needs_approval: false,
   };
-  const listing = await near.call(contract, 'list_unit', { id: unitId, terms }, { gasTera: 100, depositYocto: 2n * 10n ** 22n });
+  const listing = await near.call(contract, 'list_unit', { id: unitId, terms }, { gasTera: 100, depositYocto: BigInt(about.unit_fee) });
   if (!listing.success) throw new Error(`Could not list the test server: ${listing.error}`);
   const unit = await near.view(contract, 'get_unit', { id: unitId });
   check('the contract listed this server and returned a key only it can use', Boolean(unit.ca_public_key), unit.ca_public_key);

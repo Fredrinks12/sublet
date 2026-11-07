@@ -132,7 +132,8 @@ const commands = {
   async list() {
     const id = requireArg(rest[0], '<unit>');
     const terms = JSON.parse(fs.readFileSync(requireArg(rest[1], '<terms.json>'), 'utf8'));
-    const outcome = await near.call(contract, 'list_unit', { id, terms }, { gasTera: 100, depositYocto: 2n * 10n ** 22n });
+    const { unit_fee: unitFee } = await near.view(contract, 'about');
+    const outcome = await near.call(contract, 'list_unit', { id, terms }, { gasTera: 100, depositYocto: BigInt(unitFee) });
     if (!outcome.success) throw new Error(outcome.error);
     print(outcome, () => `Listed ${id}.\nTrust line: ${outcome.value}\nNext: sublet setup ${id}`);
   },

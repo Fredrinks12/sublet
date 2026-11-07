@@ -14,6 +14,10 @@ const env = Object.fromEntries(
 );
 
 const parent = env.DEV_PARENT ?? env.CONTRACT;
+// This script deletes the current contract. It must only ever touch its own throwaway accounts.
+if (env.CONTRACT !== parent && !env.CONTRACT.endsWith(`.${parent}`)) {
+  throw new Error(`Refusing to delete ${env.CONTRACT}: it is not a sub-account of ${parent}.`);
+}
 const parentNear = new Near({ accountId: parent });
 const privateKey = loadCredentials(parent);
 const publicKey = await KeyPairSigner.fromSecretKey(privateKey).getPublicKey();

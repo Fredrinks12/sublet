@@ -78,7 +78,7 @@ const terms = {
   allowlist: null,
   needs_approval: false,
 };
-const listing = await owner.call(contract, 'list_unit', { id: unitId, terms }, { gasTera: 100, depositYocto: 2n * 10n ** 22n });
+const listing = await owner.call(contract, 'list_unit', { id: unitId, terms }, { gasTera: 100, depositYocto: BigInt(about.unit_fee) });
 if (!listing.success) throw new Error(listing.error);
 console.log(`listed ${unitId}`);
 

@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sublet demo film</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f3eee1;
+        --ink: #1b1915;
+        --soft: #5b5447;
+        --stamp: #bf2f1b;
+        --vacant: #2b6a4c;
+        --term: #17160f;
+        --term-fg: #e9e2d0;
+        --term-dim: #8f8875;
+        --good: #a4d38e;
+        --bad: #ff8d76;
+      }
+      * { box-sizing: border-box; margin: 0; }
+      html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: 'Source Serif 4', Georgia, serif; }
+      .scene { position: absolute; inset: 0; padding: 56px 72px; display: none; flex-direction: column; justify-content: center; }
+      .scene.on { display: flex; }
+      .big { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 74px; line-height: 1.02; letter-spacing: -0.028em; font-variation-settings: 'opsz' 144; }
+      .big + .big { margin-top: 10px; }
+      .later { opacity: 0; }
+      .later.on { opacity: 1; }
+      .mark { position: absolute; top: 26px; left: 72px; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 30px; letter-spacing: -0.03em; }
+      .deck { margin-top: 18px; font-size: 32px; line-height: 1.3; max-width: 860px; }
+      .row { display: flex; gap: 60px; align-items: center; }
+      .board { flex: none; width: 310px; rotate: 1.6deg; }
+      .face { background: #fffdf8; border: 2px solid #1b1915; box-shadow: 6px 7px 0 rgb(0 0 0 / 0.16); }
+      .band { background: #bf2f1b; color: #fff8ee; font-family: 'Archivo Black', Impact, sans-serif; font-size: 62px; line-height: 1; text-align: center; padding: 18px 8px 16px; text-transform: uppercase; }
+      .small { text-align: center; padding: 12px 10px; font-size: 19px; }
+      .agent { border-top: 2px solid #1b1915; padding: 8px; text-align: center; font-family: 'Archivo Black', Impact, sans-serif; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+      .post { width: 28px; height: 60px; margin: 0 auto; background: #7a5c38; border-inline: 2px solid #1b1915; }
+      .scene.dark { padding: 0; background: var(--term); justify-content: flex-start; }
+      .caption { flex: none; padding: 20px 40px 18px; background: var(--paper); color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 34px; line-height: 1.15; letter-spacing: -0.012em; min-height: 112px; display: flex; align-items: center; }
+      pre { flex: 1; padding: 22px 40px; font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 20px; line-height: 1.5; color: var(--term-fg); white-space: pre-wrap; word-break: break-word; overflow: hidden; }
+      .good { color: var(--good); } .bad { color: var(--bad); } .dim { color: var(--term-dim); }
+      ul { list-style: none; padding: 0; margin-top: 8px; }
+      li { display: flex; align-items: baseline; gap: 22px; padding: 15px 0; border-bottom: 1px solid #b9ae97; font-size: 28px; line-height: 1.25; }
+      li b { flex: none; width: 150px; text-align: right; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 46px; color: var(--stamp); letter-spacing: -0.02em; }
+      h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 50px; letter-spacing: -0.02em; }
+      .end { text-align: center; align-items: center; }
+      .end .word { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 128px; letter-spacing: -0.035em; line-height: 1; }
+      .end p { margin-top: 12px; font-size: 28px; }
+      .end code { font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 22px; color: var(--soft); }
+    </style>
+  </head>
+  <body>
+    <section class="scene" data-from="0" data-to="5.5">
+      <span class="mark">Sublet</span>
+      <p class="big">An AI agent can hold money.</p>
+      <p class="big later" data-at="1.7">It can't open an AWS account.</p>
+    </section>
+
+    <section class="scene" data-from="5.5" data-to="12">
+      <span class="mark">Sublet</span>
+      <div class="row">
+        <div>
+          <p class="big">Rent out a Linux machine by the minute.</p>
+          <p class="deck later" data-at="7.2">One line of config. Nothing installed. A NEAR contract checks the rent and cuts a key that expires on its own.</p>
+        </div>
+        <div class="board">
+          <div class="face">
+            <div class="band">To let</div>
+            <p class="small">No daemon. No wallet on the server.</p>
+            <p class="agent">Apply to the contract</p>
+          </div>
+          <div class="post"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene dark" data-from="12" data-to="19">
+      <p class="caption">The owner's whole setup. It's a stock Debian server.</p>
+      <pre id="setup"></pre>
+    </section>
+
+    <section class="scene dark" data-from="19" data-to="50">
+      <p class="caption" id="caption"></p>
+      <pre id="transcript"></pre>
+    </section>
+
+    <section class="scene" data-from="50" data-to="62">
+      <h2>Don't take our word for it</h2>
+      <ul id="proof"></ul>
+    </section>
+
+    <section class="scene end" data-from="62" data-to="68">
+      <p class="word">Sublet</p>
+      <p>Built at NEAR HACKATHON. Testnet, unaudited.</p>
+      <p><code id="repo"></code></p>
+    </section>
+
+    <script>
+      const data = window.FILM;
+      const LENGTH = 68;
+      window.FILM_LENGTH = LENGTH;
+      const scenes = [...document.querySelectorAll('.scene')];
+      const laters = [...document.querySelectorAll('.later')];
+      const esc = (s) => s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+
+      const SETUP = [
+        ["$ echo 'ssh-ed25519 AAAAC3Nz... sublet:debian-vm' | sudo tee /etc/ssh/sublet_ca.pub", ''],
+        ["$ echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' | sudo tee /etc/ssh/sshd_config.d/sublet.conf", ''],
+        ['$ sudo systemctl reload ssh', ''],
+        ['', ''],
+        ['No package. No daemon. No wallet. The server never talks to a blockchain.', 'good'],
+      ];
+      document.getElementById('setup').innerHTML = SETUP.map(([t, c], i) => `<span data-line="${12.8 + i * 1.1}" class="${c}">${esc(t)}\n</span>`).join('');
+
+      // The transcript's lines appear in order across the scene, at a pace set by their kind.
+      const WEIGHT = { cmd: 1.5, good: 1.1, bad: 1.9, dim: 0.5, out: 1 };
+      const total = data.lines.reduce((sum, l) => sum + (WEIGHT[l.kind] ?? 1), 0);
+      let clock = 19.6;
+      const span = 28.5;
+      const rows = data.lines.map((l) => {
+        const at = clock;
+        clock += ((WEIGHT[l.kind] ?? 1) / total) * span;
+        const cls = l.kind === 'cmd' ? '' : l.kind;
+        return { ...l, at, html: `<span data-line="${at}" class="${cls}">${l.kind === 'cmd' ? '$ ' : ''}${esc(l.text)}\n</span>` };
+      });
+      document.getElementById('transcript').innerHTML = rows.map((r) => r.html).join('');
+      const commands = rows.filter((r) => r.kind === 'cmd');
+      const CAPTIONS = [
+        'No lease, no entry.',
+        "Rent it. The contract checks the rent, and NEAR's MPC network signs a key.",
+        'Plain ssh works. The server checks the key by itself.',
+        "A session tries to outlive the lease. Time's up, so it is killed.",
+        'The same key is now refused.',
+      ];
+      const captionTimes = commands.map((c) => c.at);
+
+      document.getElementById('proof').innerHTML = [
+        [data.keys, 'access keys on the contract. Nobody can change the rules.'],
+        [data.attacks, 'attacks run against it. All stopped, each one on the public record.'],
+        [data.tests, 'contract tests, and a one-command run on your own machine.'],
+        ['$0', 'held by the contract when rent is paid on Base. It goes straight to the owner.'],
+      ]
+        .map(([n, t]) => `<li><b>${n}</b><span>${t}</span></li>`)
+        .join('');
+      document.getElementById('repo').textContent = data.repo;
+
+      window.seek = (t) => {
+        for (const scene of scenes) scene.classList.toggle('on', t >= +scene.dataset.from && t < +scene.dataset.to);
+        for (const el of laters) el.classList.toggle('on', t >= +el.dataset.at);
+        for (const line of document.querySelectorAll('[data-line]')) line.style.visibility = t >= +line.dataset.line ? 'visible' : 'hidden';
+        let caption = CAPTIONS[0];
+        captionTimes.forEach((at, i) => {
+          if (t >= at && CAPTIONS[i]) caption = CAPTIONS[i];
+        });
+        document.getElementById('caption').textContent = caption;
+      };
+      window.seek(0);
+    </script>
+  </body>
+</html>

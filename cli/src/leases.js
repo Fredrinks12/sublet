@@ -6,8 +6,6 @@ import { execSsh, newKeyPair, saveCertificate, subletHome } from './ssh.js';
 import { refusalCode } from './near.js';
 import { findTransfer, payToken, toContractLog } from './evm.js';
 
-const STORAGE_FEE_YOCTO = 10n ** 22n; // 0.01 NEAR, matches LEASE_STORAGE_FEE in the contract.
-
 function workDir(contract) {
   return path.join(subletHome(), 'leases', contract, crypto.randomBytes(6).toString('hex'));
 }
@@ -52,13 +50,14 @@ export async function rentWithNear(near, contract, unitId, ticks, { sourceAddres
   const unit = await near.view(contract, 'get_unit', { id: unitId });
   if (!unit) throw new Error(`No unit ${unitId}`);
   const rent = BigInt(unit.terms.near_per_tick) * BigInt(ticks);
+  const { lease_fee: leaseFee } = await near.view(contract, 'about');
   const temp = workDir(contract);
   const key = newKeyPair(temp);
   const outcome = await near.call(
     contract,
     'rent',
     { unit_id: unitId, ticks, ssh_key: key.publicLine, source_address: sourceAddress ?? null },
-    { gasTera: 150, depositYocto: rent + STORAGE_FEE_YOCTO },
+    { gasTera: 150, depositYocto: rent + BigInt(leaseFee) },
   );
   if (!outcome.success) {
     fs.rmSync(temp, { recursive: true, force: true });
@@ -95,6 +94,7 @@ export async function claimForeign(near, contract, unitId, chain, log, signMessa
     log_index: log.log_index,
   });
   const signature = await signMessage(message);
+  const { lease_fee: leaseFee } = await near.view(contract, 'about');
   const outcome = await near.call(
     contract,
     'rent_foreign',
@@ -106,7 +106,7 @@ export async function claimForeign(near, contract, unitId, chain, log, signMessa
       payer_signature: signature,
       source_address: sourceAddress ?? null,
     },
-    { gasTera: 300, depositYocto: STORAGE_FEE_YOCTO },
+    { gasTera: 300, depositYocto: BigInt(leaseFee) },
   );
   if (!outcome.success) {
     fs.rmSync(temp, { recursive: true, force: true });

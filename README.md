@@ -69,7 +69,7 @@ cd contract
 cargo test --lib
 ```
 
-You should see `test result: ok. 79 passed`. One test reproduces a hash the live testnet MPC network really signed.
+You should see `test result: ok. 88 passed`. One test reproduces a hash the live testnet MPC network really signed.
 
 ### Rent a machine on the website
 

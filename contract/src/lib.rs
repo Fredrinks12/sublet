@@ -29,10 +29,12 @@ const GAS_ON_SIGNED: Gas = Gas::from_tgas(20);
 const GAS_VERIFY: Gas = Gas::from_tgas(40);
 const GAS_ON_VERIFIED: Gas = Gas::from_tgas(100);
 
-/// Held once per lease to pay for its storage. Refunded if the lease fails.
-const LEASE_STORAGE_FEE: NearToken = NearToken::from_millinear(10);
-/// Held once per unit to pay for its storage. Refunded if the CA key cannot be derived.
-const UNIT_STORAGE_FEE: NearToken = NearToken::from_millinear(20);
+/// Held once per lease to pay for its storage, about 1.5 KB with its certificate. Refunded if the
+/// lease fails.
+const LEASE_STORAGE_FEE: NearToken = NearToken::from_millinear(20);
+/// Held while a unit is listed, to pay for its storage. The longest allowed terms take about 7 KB.
+/// Refunded on delisting.
+const UNIT_STORAGE_FEE: NearToken = NearToken::from_millinear(100);
 
 /// The MPC contract's limit on an EdDSA payload.
 const MAX_SIGNED_BYTES: usize = 1232;
@@ -170,6 +172,10 @@ pub struct About {
     pub version: String,
     /// `release`, or `dev-any-payer` for a test build that skips the payer check. Never trust one.
     pub build: String,
+    /// Yoctonear held per lease, on top of rent.
+    pub lease_fee: U128,
+    /// Yoctonear held while a unit is listed.
+    pub unit_fee: U128,
     pub mpc: AccountId,
     pub sign_domain: u32,
     pub foreign_domain: u32,
@@ -210,8 +216,24 @@ fn valid_unit_id(id: &str) -> bool {
     (3..=32).contains(&id.len()) && id.bytes().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'-')
 }
 
+/// Clients build shell commands from the principal and host, and tell people to paste them. So
+/// these fields carry only characters that mean nothing to a shell, and cannot start with `-`,
+/// which `ssh` would read as an option.
 fn valid_principal(p: &str) -> bool {
-    (1..=32).contains(&p.len()) && p.bytes().all(|c| c.is_ascii_alphanumeric() || b"_.-".contains(&c))
+    (1..=32).contains(&p.len())
+        && !p.starts_with('-')
+        && p.bytes().all(|c| c.is_ascii_alphanumeric() || b"_.-".contains(&c))
+}
+
+fn valid_host(h: &str) -> bool {
+    (1..=253).contains(&h.len())
+        && !h.starts_with('-')
+        && h.bytes().all(|c| c.is_ascii_alphanumeric() || b".-:".contains(&c))
+}
+
+/// Listing text reaches terminals through the CLI, so it must not carry escape sequences.
+fn printable(text: &str) -> bool {
+    text.chars().all(|c| !c.is_control())
 }
 
 fn valid_source_address(a: &str) -> bool {
@@ -231,9 +253,10 @@ fn parse_address(a: &str) -> [u8; 20] {
 }
 
 fn validate_terms(t: &Terms) {
-    require!(t.title.len() <= 80 && !t.title.is_empty(), "E_BAD_TITLE");
-    require!(t.blurb.len() <= 280, "E_BAD_BLURB");
-    require!(!t.host.is_empty() && t.host.len() <= 253, "E_BAD_HOST");
+    require!(t.title.len() <= 80 && !t.title.is_empty() && printable(&t.title), "E_BAD_TITLE");
+    require!(t.blurb.len() <= 280 && printable(&t.blurb), "E_BAD_BLURB");
+    require!(valid_host(&t.host), "E_BAD_HOST");
+    require!(t.port > 0, "E_BAD_PORT");
     require!(valid_principal(&t.principal), "E_BAD_PRINCIPAL");
     require!(t.principal != "root", "E_ROOT_NOT_ALLOWED");
     require!(t.command.as_ref().map_or(true, |c| !c.is_empty() && c.len() <= 300), "E_BAD_COMMAND");
@@ -352,6 +375,9 @@ impl Sublet {
                 unit.ca = Some(ca);
                 let owner = unit.owner.clone();
                 let line = ssh::public_key_line(&ca, &format!("sublet:{id}"));
+                if let Some(change) = deposit.checked_sub(UNIT_STORAGE_FEE).filter(|c| !c.is_zero()) {
+                    let _ = Promise::new(owner.clone()).transfer(change);
+                }
                 event("unit_listed", json!({"unit": id, "owner": owner, "ca": line}));
                 Some(line)
             }
@@ -388,12 +414,14 @@ impl Sublet {
     }
 
     pub fn delist_unit(&mut self, id: String) {
-        let seat = {
+        let (owner, seat) = {
             let unit = self.unit_of_caller(&id);
-            seat_key(&unit.owner, &unit.terms)
+            require!(unit.in_flight.is_none(), "E_BUSY");
+            (unit.owner.clone(), seat_key(&unit.owner, &unit.terms))
         };
         self.units.remove(&id);
         self.seats.remove(&seat);
+        let _ = Promise::new(owner).transfer(UNIT_STORAGE_FEE);
         event("unit_delisted", json!({"unit": id}));
     }
 
@@ -689,6 +717,8 @@ impl Sublet {
             name: "sublet".to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
             build: if cfg!(feature = "dev-any-payer") { "dev-any-payer" } else { "release" }.to_string(),
+            lease_fee: U128(LEASE_STORAGE_FEE.as_yoctonear()),
+            unit_fee: U128(UNIT_STORAGE_FEE.as_yoctonear()),
             mpc: self.mpc.clone(),
             sign_domain: self.sign_domain,
             foreign_domain: self.foreign_domain,

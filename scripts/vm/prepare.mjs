@@ -16,6 +16,7 @@ if (installed.code !== 0) {
   await serial.run('apt-get update -qq', { timeoutMs: 300_000 });
   await serial.run('DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server', { timeoutMs: 600_000 });
 }
+await serial.run('command -v curl >/dev/null || (apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq curl)', { timeoutMs: 300_000 });
 await serial.run('id tenant >/dev/null 2>&1 || useradd -m -s /bin/bash tenant');
 await serial.run('passwd -l tenant >/dev/null');
 await serial.run('ssh-keygen -A >/dev/null');

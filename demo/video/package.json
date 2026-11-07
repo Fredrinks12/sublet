@@ -1,0 +1,11 @@
+{
+  "name": "sublet-demo-video",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": { "render": "node render.mjs" },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "puppeteer-core": "^25.16.0"
+  }
+}

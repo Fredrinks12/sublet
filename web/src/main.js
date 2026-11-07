@@ -2,6 +2,7 @@ import { CONTRACT, EXPLORER, accessKeys, accountState, listUnit, openPocket, poc
 import { connectWallet, hasWallet, payToken, signClaim, transferLog } from './evm.js';
 import { loginScript, newSshKey } from './keys.js';
 import attacks from './attacks.json';
+import transcript from './transcript.json';
 
 const MPC = 'v1.signer-prod.testnet';
 const TOKENS = { '0x036cbd53842c5426634e7929541ec2318f3dcf7e': { symbol: 'USDC', decimals: 6 } };
@@ -179,17 +180,34 @@ async function loadLedger() {
   }
 }
 
+const HEADLINE_ATTACKS = [
+  'Invent a payment that never happened',
+  "Claim a stranger's real payment for your own key",
+  "Copy a tenant's public certificate from the chain and use it",
+  'Edit a certificate to last another year',
+  'Use a key cut for one machine on another',
+  'Leave nohup and setsid processes running past the end',
+  'Hide a shell command in a server address, for a visitor to paste',
+  'Log back in after the lease ends',
+];
+
 function renderAttacks() {
-  $('attacks').replaceChildren(
-    ...attacks.map((a) =>
-      el(
-        'tr',
-        {},
-        el('td', {}, a.attack),
-        el('td', {}, a.tx ? el('a', { href: EXPLORER + a.tx, target: '_blank', rel: 'noopener' }, a.result) : a.result),
-      ),
-    ),
-  );
+  const row = (a) =>
+    el(
+      'tr',
+      {},
+      el('td', {}, a.attack),
+      el('td', {}, a.tx ? el('a', { href: EXPLORER + a.tx, target: '_blank', rel: 'noopener' }, a.result) : a.result),
+    );
+  const headline = HEADLINE_ATTACKS.map((name) => attacks.find((a) => a.attack === name)).filter(Boolean);
+  $('attacks').replaceChildren(...headline.map(row));
+  const more = $('more-attacks');
+  more.textContent = `Show all ${attacks.length} attacks`;
+  more.hidden = attacks.length <= headline.length;
+  more.addEventListener('click', () => {
+    $('attacks').replaceChildren(...attacks.map(row));
+    more.hidden = true;
+  });
 }
 
 // ---- Renting -----------------------------------------------------------------------------------
@@ -383,6 +401,9 @@ const LISTING_REFUSALS = {
   E_BAD_PRINCIPAL: 'That Unix user name has characters the contract does not accept.',
   E_BAD_TICK: 'A tick must last between 30 seconds and a day.',
   E_BAD_ADDRESS: 'That does not look like a 0x address.',
+  E_BAD_HOST: 'Use a plain hostname or IP address for the server.',
+  E_BAD_TITLE: 'The headline cannot contain line breaks or control characters.',
+  E_BAD_BLURB: 'The description cannot contain line breaks or control characters.',
 };
 
 function openListing() {
@@ -501,44 +522,29 @@ function showSetup(unit) {
 
 // ---- The replay --------------------------------------------------------------------------------
 
-const REPLAY = [
-  ['$ ssh tenant@debian-vm', '', 450],
-  ['tenant@debian-vm: Permission denied (publickey,password).', 'bad', 1400],
-  ['', '', 200],
-  ['$ sublet rent debian-vm --ticks 2', '', 450],
-  ['Lease 1 on debian-vm: Issued', 'good', 500],
-  ['  valid until   2 minutes from now', 'dim', 200],
-  ['  certificate   signed by the NEAR MPC network, read by nobody', 'dim', 1300],
-  ['', '', 200],
-  ['$ sublet ssh 1 -- "whoami; uname -sr"', '', 450],
-  ['tenant', 'good', 200],
-  ['Linux 6.12.115+deb13.1-amd64', 'good', 1400],
-  ['', '', 200],
-  ['$ sublet ssh 1 -- "sleep 100000"', '', 900],
-  ['                 ... two minutes pass, the lease ends ...', 'dim', 1600],
-  ['Connection to debian-vm closed by remote host.', 'bad', 1200],
-  ['', '', 200],
-  ['$ sublet ssh 1', '', 450],
-  ['tenant@debian-vm: Permission denied (publickey,password).', 'bad', 5200],
-];
+/** Pauses after each line, by kind, so the replay reads at a human pace. */
+const PAUSE = { cmd: 650, good: 700, bad: 1500, dim: 420, out: 500 };
 
 /** Shows the whole transcript from the start, then lights it line by line. */
 function runReplay() {
   const pre = $('terminal');
-  const lines = REPLAY.map(([text, cls]) => el('span', { class: cls ? `${cls} line` : 'line' }, `${text}\n`));
-  pre.replaceChildren(...lines);
+  const rows = transcript.lines.map(({ text, kind }) => ({
+    node: el('span', { class: kind === 'cmd' ? 'line' : `${kind} line` }, `${kind === 'cmd' ? '$ ' : ''}${text}\n`),
+    wait: PAUSE[kind] ?? 500,
+  }));
+  pre.replaceChildren(...rows.map((row) => row.node));
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let index = 0;
   const step = () => {
-    if (index === lines.length) {
+    if (index === rows.length) {
       index = 0;
-      lines.forEach((line) => line.classList.add('unlit'));
+      rows.forEach((row) => row.node.classList.add('unlit'));
     }
-    lines[index].classList.remove('unlit');
-    setTimeout(step, REPLAY[index][2]);
+    rows[index].node.classList.remove('unlit');
+    setTimeout(step, index === rows.length - 1 ? 5000 : rows[index].wait);
     index += 1;
   };
-  lines.forEach((line) => line.classList.add('unlit'));
+  rows.forEach((row) => row.node.classList.add('unlit'));
   step();
 }
 

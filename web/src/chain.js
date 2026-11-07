@@ -6,7 +6,6 @@ export const CONTRACT = import.meta.env.VITE_CONTRACT ?? 'sublet.testnet';
 export const RPC = ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
 export const EXPLORER = 'https://testnet.nearblocks.io/txns/';
 const FAUCET = 'https://helper.nearprotocol.com/account';
-const STORAGE_FEE = 10n ** 22n;
 const TGAS = 10n ** 12n;
 
 const encode = (text) => btoa(String.fromCharCode(...new TextEncoder().encode(text)));
@@ -102,22 +101,19 @@ async function follow(hash, onLog) {
   const seen = new Set();
   const deadline = Date.now() + 300_000;
   for (;;) {
-    try {
-      const result = await rpc('tx', { tx_hash: hash, sender_account_id: session.accountId, wait_until: 'INCLUDED' });
-      const receipts = result.receipts_outcome ?? [];
-      for (const receipt of receipts) {
-        for (const line of receipt.outcome.logs) {
-          if (!seen.has(line)) {
-            seen.add(line);
-            onLog?.(line);
-          }
+    // Only the lookup may fail quietly. A refusal from the contract must reach the visitor.
+    const result = await rpc('tx', { tx_hash: hash, sender_account_id: session.accountId, wait_until: 'INCLUDED' }).catch(() => null);
+    for (const receipt of result?.receipts_outcome ?? []) {
+      for (const line of receipt.outcome.logs) {
+        if (!seen.has(line)) {
+          seen.add(line);
+          onLog?.(line);
         }
       }
-      if (result.status && ('SuccessValue' in result.status || 'Failure' in result.status)) {
-        return finish(hash, result);
-      }
-    } catch {
-      // Not indexed yet, or a dropped connection. Keep polling.
+    }
+    const status = result?.status;
+    if (status && typeof status === 'object' && ('SuccessValue' in status || 'Failure' in status)) {
+      return finish(hash, result);
     }
     if (Date.now() > deadline) throw new Error('Timed out waiting for the network.');
     await sleep(1500);
@@ -155,18 +151,24 @@ export async function call(method, args, { gasTera = 150, deposit = 0n, onLog } 
   return follow(sent.transaction?.hash ?? sent.transaction_outcome?.id, onLog);
 }
 
-export const rent = (unit, ticks, sshKey, onLog) =>
-  call('rent', { unit_id: unit.id, ticks, ssh_key: sshKey, source_address: null }, {
-    deposit: BigInt(unit.terms.near_per_tick) * BigInt(ticks) + STORAGE_FEE,
+export async function rent(unit, ticks, sshKey, onLog) {
+  const { lease_fee: fee } = await view('about');
+  return call('rent', { unit_id: unit.id, ticks, ssh_key: sshKey, source_address: null }, {
+    deposit: BigInt(unit.terms.near_per_tick) * BigInt(ticks) + BigInt(fee),
     onLog,
   });
+}
 
-export const rentForeign = (unit, chain, log, sshKey, signature, onLog) =>
-  call('rent_foreign', { unit_id: unit.id, chain, log, ssh_key: sshKey, payer_signature: signature, source_address: null }, {
+export async function rentForeign(unit, chain, log, sshKey, signature, onLog) {
+  const { lease_fee: fee } = await view('about');
+  return call('rent_foreign', { unit_id: unit.id, chain, log, ssh_key: sshKey, payer_signature: signature, source_address: null }, {
     gasTera: 300,
-    deposit: STORAGE_FEE,
+    deposit: BigInt(fee),
     onLog,
   });
+}
 
-export const listUnit = (id, terms) =>
-  call('list_unit', { id, terms }, { gasTera: 100, deposit: 2n * STORAGE_FEE });
+export async function listUnit(id, terms) {
+  const { unit_fee: fee } = await view('about');
+  return call('list_unit', { id, terms }, { gasTera: 100, deposit: BigInt(fee) });
+}
