@@ -7,13 +7,15 @@ import { Account, FailoverRpcProvider, JsonRpcProvider, KeyPair, KeyPairSigner, 
 
 export const NETWORKS = {
   testnet: {
-    rpc: ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org', 'https://rpc.testnet.fastnear.com'],
+    rpc: ['https://test.rpc.fastnear.com', 'https://rpc.testnet.fastnear.com', 'https://rpc.testnet.near.org'],
+    archival: ['https://archival-rpc.testnet.fastnear.com', 'https://archival-rpc.testnet.near.org'],
     mpc: 'v1.signer-prod.testnet',
     explorer: 'https://testnet.nearblocks.io/txns/',
     faucet: 'https://helper.nearprotocol.com/account',
   },
   mainnet: {
     rpc: ['https://free.rpc.fastnear.com', 'https://rpc.mainnet.near.org'],
+    archival: ['https://archival-rpc.mainnet.fastnear.com', 'https://archival-rpc.mainnet.near.org'],
     mpc: 'v1.signer',
     explorer: 'https://nearblocks.io/txns/',
   },
@@ -122,6 +124,44 @@ export class Near {
     }
   }
 
+  /**
+   * Looks up a finished transaction, however old. Ordinary nodes forget transactions after about
+   * 2.5 days, so anything that must stay checkable has to ask an archival node.
+   *
+   * Archival nodes throttle hard, so this backs off. It returns null when no node would answer,
+   * which means "unknown", not "failed". It throws if a node says the transaction does not exist
+   * and no node has produced it by the last retry.
+   *
+   * `NONE` matters. At any other level a node stalls for 30 s over a hash it does not have, then
+   * reports a timeout that looks just like a busy node, so a made-up hash would never be caught.
+   */
+  async archivedOutcome(hash, senderId, { attempts = 5, backoffMs = 1500 } = {}) {
+    const params = { tx_hash: hash, sender_account_id: senderId, wait_until: 'NONE' };
+    let denied = false;
+    for (let attempt = 0; attempt < attempts; attempt += 1) {
+      for (const url of this.config.archival) {
+        let body;
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ jsonrpc: '2.0', id: 'sublet', method: 'tx', params }),
+            signal: AbortSignal.timeout(12_000),
+          });
+          body = await response.json();
+        } catch {
+          continue;
+        }
+        const status = body?.result?.status;
+        if (status?.Failure || status?.SuccessValue !== undefined) return summarize(hash, body.result);
+        if (body?.error?.cause?.name === 'UNKNOWN_TRANSACTION') denied = true;
+      }
+      if (attempt + 1 < attempts) await sleep(backoffMs * 2 ** attempt);
+    }
+    if (denied) throw new Error(`No such transaction: ${hash}`);
+    return null;
+  }
+
   async call(contractId, method, args, { gasTera = 300, depositYocto = 0n } = {}) {
     const action = actions.functionCall(method, args, BigInt(gasTera) * TGAS, BigInt(depositYocto));
     const hash = await this.submit(contractId, [action]);
@@ -172,6 +212,8 @@ function summarize(hash, result) {
   }
   return {
     hash,
+    signerId: result.transaction?.signer_id,
+    receiverId: result.transaction?.receiver_id,
     success,
     value,
     logs,

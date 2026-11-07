@@ -122,15 +122,53 @@ for (const id of evidence.leases) {
 }
 
 console.log('\n--- Refusals on the public record');
+// Ordinary nodes forget transactions after about 2.5 days, so these come from an archival node. It
+// throttles hard, so a lookup it refuses is reported as unknown, never as a failed check.
 const refusals = attacks.results.filter((r) => r.tx && r.expected.startsWith('E_'));
-let confirmed = 0;
-for (const refusal of refusals) {
-  const outcome = await near.outcome(refusal.tx, refusal.signer, 30_000).catch(() => null);
-  const code = outcome ? refusalCode(outcome.error) : null;
-  if (code === refusal.expected) confirmed += 1;
-  else check(refusal.attack, false, `expected ${refusal.expected}, chain says ${code}`);
-}
-check(`${confirmed} of ${refusals.length} recorded refusals are on chain with the same code`, confirmed === refusals.length);
+console.log(`fetching ${refusals.length} transactions from an archival node, which can be slow...`);
 
-console.log(failures ? `\n${failures} checks failed.` : '\nEverything checked out.');
+/** What is wrong with a recorded refusal, or null if the chain agrees with all of it. */
+function mismatch(refusal, outcome) {
+  if (outcome.receiverId !== contract) return `it went to ${outcome.receiverId}, not ${contract}`;
+  if (outcome.signerId !== refusal.signer) return `it was signed by ${outcome.signerId}, not ${refusal.signer}`;
+  const code = refusalCode(outcome.error);
+  if (code !== refusal.expected) return `expected ${refusal.expected}, chain says ${code ?? outcome.error ?? 'it succeeded'}`;
+  return null;
+}
+
+let confirmed = 0;
+let reached = 0;
+let unanswered = 0;
+for (const refusal of refusals) {
+  let outcome;
+  try {
+    outcome = await near.archivedOutcome(refusal.tx, refusal.signer);
+  } catch (error) {
+    reached += 1;
+    check(refusal.attack, false, error.message);
+    continue;
+  }
+  if (outcome === null) {
+    // Three in a row means this address is being shut out, so waiting longer would not help.
+    unanswered += 1;
+    if (unanswered === 3) break;
+    continue;
+  }
+  unanswered = 0;
+  reached += 1;
+  const problem = mismatch(refusal, outcome);
+  if (problem) check(refusal.attack, false, problem);
+  else confirmed += 1;
+  await new Promise((resolve) => setTimeout(resolve, 500));
+}
+const unknown = refusals.length - reached;
+if (reached > 0) check(`${confirmed} of ${reached} recorded refusals came from this contract, with the recorded signer and code`, confirmed === reached);
+if (unknown > 0) {
+  console.log(`NOTE  ${unknown} refusals could not be fetched, because the archival node was busy. That says nothing about them.`);
+  console.log('      Run this again later, or open each link in docs/EVIDENCE.md.');
+}
+
+if (failures) console.log(`\n${failures} checks failed.`);
+else if (unknown) console.log(`\nNothing failed, but ${unknown} checks could not run.`);
+else console.log('\nEverything checked out.');
 process.exit(failures ? 1 : 0);

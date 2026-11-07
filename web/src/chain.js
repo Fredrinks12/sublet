@@ -3,7 +3,7 @@
 import { Account, JsonRpcProvider, KeyPair, KeyPairSigner, actions, FailoverRpcProvider } from 'near-api-js';
 
 export const CONTRACT = import.meta.env.VITE_CONTRACT ?? 'sublet.testnet';
-export const RPC = ['https://test.rpc.fastnear.com', 'https://rpc.testnet.near.org'];
+export const RPC = ['https://test.rpc.fastnear.com', 'https://rpc.testnet.fastnear.com', 'https://rpc.testnet.near.org'];
 export const EXPLORER = 'https://testnet.nearblocks.io/txns/';
 const FAUCET = 'https://helper.nearprotocol.com/account';
 const TGAS = 10n ** 12n;

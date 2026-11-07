@@ -58,7 +58,9 @@ cd cli && npm ci && cd ..
 node scripts/verify-evidence.mjs
 ```
 
-It reads the contract and its leases from public RPC, verifies each certificate's Ed25519 signature itself, and confirms each recorded attack was refused on chain with the same code. You should see `Everything checked out.` Results and links are in [docs/EVIDENCE.md](docs/EVIDENCE.md).
+It reads the contract and its leases from public RPC, verifies each certificate's Ed25519 signature itself, and fetches the 23 recorded refusals that have a code, to confirm each came from this contract with the recorded signer and code. You should see `Everything checked out.` Results and links are in [docs/EVIDENCE.md](docs/EVIDENCE.md).
+
+Old transactions come from an archival node, which throttles hard. If it is too busy, the script says how many checks could not run, instead of failing them, and you can run it again.
 
 ### Run the contract tests
 
