@@ -142,6 +142,7 @@ const serial = new Serial();
 await serial.connect();
 await serial.login();
 await serial.run(`printf '%s\\n' '${openUnit.ca_public_key}' '${fixedUnit.ca_public_key}' > /etc/ssh/sublet_ca.pub`);
+await serial.run(`echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' > /etc/ssh/sshd_config.d/sublet.conf`);
 await serial.run('id tenant2 >/dev/null 2>&1 || useradd -m -s /bin/bash tenant2');
 await serial.run('systemctl reload ssh');
 

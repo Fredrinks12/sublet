@@ -87,6 +87,7 @@ await serial.connect();
 await serial.login();
 const unit = await owner.view(contract, 'get_unit', { id: unitId });
 await serial.run(`echo '${unit.ca_public_key}' > /etc/ssh/sublet_ca.pub`);
+await serial.run(`echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' > /etc/ssh/sshd_config.d/sublet.conf`);
 await serial.run('systemctl reload ssh');
 const skew = await serial.run('date +%s');
 console.log(`clock check: guest minus host = ${Number(skew.output) - Math.floor(Date.now() / 1000)}s`);
