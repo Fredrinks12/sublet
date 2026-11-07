@@ -39,7 +39,7 @@
       .post { width: 28px; height: 60px; margin: 0 auto; background: #7a5c38; border-inline: 2px solid #1b1915; }
       .scene.dark { padding: 0; background: var(--term); justify-content: flex-start; }
       .caption { flex: none; padding: 20px 40px 18px; background: var(--paper); color: var(--ink); font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 34px; line-height: 1.15; letter-spacing: -0.012em; min-height: 112px; display: flex; align-items: center; }
-      pre { flex: 1; padding: 22px 40px; font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 20px; line-height: 1.5; color: var(--term-fg); white-space: pre-wrap; word-break: break-word; overflow: hidden; }
+      pre { flex: 1; padding: 18px 40px; font-family: 'IBM Plex Mono', Consolas, monospace; font-size: 24px; line-height: 1.42; color: var(--term-fg); white-space: pre-wrap; word-break: break-word; overflow: hidden; }
       .good { color: var(--good); } .bad { color: var(--bad); } .dim { color: var(--term-dim); }
       ul { list-style: none; padding: 0; margin-top: 8px; }
       li { display: flex; align-items: baseline; gap: 22px; padding: 15px 0; border-bottom: 1px solid #b9ae97; font-size: 28px; line-height: 1.25; }
@@ -138,7 +138,7 @@
 
       document.getElementById('proof').innerHTML = [
         [data.keys, 'access keys on the contract. Nobody can change the rules.'],
-        [data.attacks, 'attacks run against it. All stopped, each one on the public record.'],
+        [data.attacks, 'attacks run against it, and all of them stopped.'],
         [data.tests, 'contract tests, and a one-command run on your own machine.'],
         ['$0', 'held by the contract when rent is paid on Base. It goes straight to the owner.'],
       ]
