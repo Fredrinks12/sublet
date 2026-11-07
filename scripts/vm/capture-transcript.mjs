@@ -22,7 +22,7 @@ const say = (text, kind = 'out') => {
   lines.push({ text, kind });
   console.log(kind === 'cmd' ? `$ ${text}` : text);
 };
-const cleanLines = (text) => text.split('\n').map((l) => l.trimEnd()).filter((l) => l && !/^Warning: Permanently added/.test(l));
+const cleanLines = (text) => text.split('\n').map((l) => l.trimEnd()).filter((l) => l && !/^Warning: Permanently added|^Pseudo-terminal will not be allocated/.test(l));
 
 say(`ssh -p ${unit.terms.port} ${target}`, 'cmd');
 const stranger = newKeyPair(path.join(scratch, 'k'), 'stranger');

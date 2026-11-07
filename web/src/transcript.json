@@ -1,1 +1,68 @@
-{ "contract": "", "lease": null, "tx": null, "captured_at": null, "lines": [] }
+﻿{
+    "contract":  "sublet.testnet",
+    "lease":  "16",
+    "tx":  "CHF6bobYsx4ZXfNHpLMpZwF2sGbHmNf1asEyiBAs5RCG",
+    "captured_at":  "2026-11-07T15:29:46.051Z",
+    "lines":  [
+                  {
+                      "text":  "ssh -p 2222 tenant@127.0.0.1",
+                      "kind":  "cmd"
+                  },
+                  {
+                      "text":  "tenant@127.0.0.1: Permission denied (publickey,password).",
+                      "kind":  "bad"
+                  },
+                  {
+                      "text":  "sublet rent debian-vm --ticks 2",
+                      "kind":  "cmd"
+                  },
+                  {
+                      "text":  "Lease 16 on debian-vm: Issued",
+                      "kind":  "good"
+                  },
+                  {
+                      "text":  "  cut in        9.5s by the NEAR MPC network",
+                      "kind":  "dim"
+                  },
+                  {
+                      "text":  "  NEAR tx       CHF6bobYsx4ZXfNHpLMpZwF2sGbHmNf1asEyiBAs5RCG",
+                      "kind":  "dim"
+                  },
+                  {
+                      "text":  "  valid until   2026-11-07T15:29:41.000Z",
+                      "kind":  "dim"
+                  },
+                  {
+                      "text":  "sublet ssh 16 -- \"whoami; uname -sr\"",
+                      "kind":  "cmd"
+                  },
+                  {
+                      "text":  "tenant",
+                      "kind":  "good"
+                  },
+                  {
+                      "text":  "Linux 6.12.115+deb13.1-amd64",
+                      "kind":  "good"
+                  },
+                  {
+                      "text":  "sublet ssh 16 -- \"sleep 100000; echo survived\"",
+                      "kind":  "cmd"
+                  },
+                  {
+                      "text":  "[108 seconds pass. The lease ends.]",
+                      "kind":  "dim"
+                  },
+                  {
+                      "text":  "Connection to 127.0.0.1 closed by remote host.",
+                      "kind":  "bad"
+                  },
+                  {
+                      "text":  "sublet ssh 16",
+                      "kind":  "cmd"
+                  },
+                  {
+                      "text":  "tenant@127.0.0.1: Permission denied (publickey,password).",
+                      "kind":  "bad"
+                  }
+              ]
+}
