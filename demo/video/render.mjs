@@ -11,7 +11,7 @@ import puppeteer from 'puppeteer-core';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
 const out = process.argv[2] ?? path.join(here, 'sublet-demo.mp4');
-const repo = process.argv[3] ?? 'github.com/your-team/sublet';
+const repo = process.argv[3] ?? 'sublet.testnet on NEAR testnet';
 const FPS = 24;
 
 const transcript = JSON.parse(fs.readFileSync(path.join(root, 'demo', 'transcript.json'), 'utf8'));
