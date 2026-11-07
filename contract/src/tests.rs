@@ -1,4 +1,4 @@
-﻿//! Contract tests. Cross-contract replies are fed in as promise results, using the same JSON the
+//! Contract tests. Cross-contract replies are fed in as promise results, using the same JSON the
 //! live MPC network returns. Each refusal is asserted by its stable code.
 
 use super::*;
@@ -484,7 +484,7 @@ fn the_owner_can_reject_and_the_tenant_is_refunded() {
     let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
     act_as("owner.testnet", NearToken::from_yoctonear(0));
     c.reject(U64(1));
-    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Rejected);
+    assert!(c.get_lease(U64(1)).is_none(), "a refunded lease leaves no state");
 }
 
 #[test]
@@ -493,7 +493,7 @@ fn a_tenant_can_withdraw_an_unanswered_request() {
     act_as("agent.testnet", deposit(100));
     let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
     c.cancel(U64(1));
-    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Cancelled);
+    assert!(c.get_lease(U64(1)).is_none(), "a refunded lease leaves no state");
 }
 
 #[test]
@@ -599,6 +599,26 @@ fn a_foreign_claim_needs_a_storage_fee() {
 }
 
 #[test]
+#[should_panic(expected = "E_PAY_ON_ANOTHER_CHAIN")]
+fn a_machine_priced_only_on_base_cannot_be_rented_free_with_near() {
+    let mut t = foreign_terms();
+    t.near_per_tick = U128(0);
+    let mut c = listed(t);
+    act_as("freeloader.testnet", deposit(0));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+}
+
+#[test]
+fn a_machine_with_no_prices_at_all_is_free() {
+    let mut t = terms();
+    t.near_per_tick = U128(0);
+    let mut c = listed(t);
+    act_as("friend.testnet", deposit(0));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Cutting);
+}
+
+#[test]
 fn claim_message_binds_contract_unit_key_and_payment() {
     let log = real_payment_log();
     let key = ssh::parse_public_key(SSH_KEY).unwrap();
@@ -622,7 +642,7 @@ fn recent_leases_are_newest_first() {
     for id in 1..=3 {
         act_as("tenant.testnet", deposit(100));
         let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
-        key_failed(&mut c, id);
+        key_cut(&mut c, id);
     }
     let ids: Vec<u64> = c.recent_leases(Some(2)).iter().map(|l| l.id.0).collect();
     assert_eq!(ids, vec![3, 2]);
@@ -685,14 +705,101 @@ fn eip191_recovery_matches_a_signature_made_by_a_real_wallet() {
 }
 
 #[test]
-fn a_signed_payment_starts_verification_and_is_marked_spent() {
+fn a_claim_holds_nothing_until_the_network_confirms_it() {
     let mut c = listed(foreign_terms());
     claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
     let lease = c.get_lease(U64(1)).unwrap();
     assert_eq!(lease.status, LeaseStatus::Verifying);
     assert_eq!(lease.tenant, PAYER);
     assert_eq!(lease.ticks, 2);
+    assert!(!is_spent(&c), "an unconfirmed claim must not mark the payment as used");
+    act_as("someone.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().status, LeaseStatus::Cutting);
+}
+
+#[test]
+fn a_confirmed_payment_is_marked_spent() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
     assert!(is_spent(&c));
+}
+
+#[test]
+fn a_late_duplicate_claim_cannot_free_a_spent_payment() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
+    assert_eq!(key_cut(&mut c, 1).status, LeaseStatus::Issued);
+    attest(&mut c, 2, &hash);
+    assert!(c.get_lease(U64(2)).is_none());
+    assert!(is_spent(&c), "the first claim's payment must stay spent");
+}
+
+#[test]
+fn a_verified_payment_that_finds_the_unit_taken_is_not_burned() {
+    let mut c = listed(foreign_terms());
+    claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
+    act_as("someone.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    key_cut(&mut c, 2);
+    let hash = expected_hash(&c);
+    attest(&mut c, 1, &hash);
+    assert!(c.get_lease(U64(1)).is_none());
+    assert!(!is_spent(&c), "the tenant can claim again when the unit is free");
+}
+
+#[test]
+fn a_lost_callback_cannot_hold_a_unit_for_ever() {
+    let mut c = listed(terms());
+    act_as("first.testnet", deposit(100));
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    act_at("second.testnet", deposit(100), NOW + IN_FLIGHT_TIMEOUT_SECS + 1);
+    let _ = c.rent("box-1".into(), 1, Some(SSH_KEY.into()), None);
+    assert_eq!(c.get_lease(U64(2)).unwrap().tenant, "second.testnet");
+}
+
+#[test]
+#[should_panic(expected = "E_BAD_COMMAND")]
+fn a_command_cannot_grow_past_the_signing_limit_when_quoted() {
+    listing_with(|t| t.command = Some("'".repeat(300)));
+}
+
+#[test]
+fn the_largest_allowed_certificate_fits_the_mpc_limit() {
+    let command = ssh::session_command(u64::MAX, Some(&"x".repeat(300)), true);
+    assert!(command.len() <= MAX_SESSION_COMMAND_BYTES, "{}", command.len());
+    let (nonce, subject, ca) = ([0u8; 32], [0u8; 32], [0u8; 32]);
+    let key_id = "k".repeat(140);
+    let tbs = ssh::to_be_signed(&ssh::CertSpec {
+        nonce: &nonce,
+        subject: &subject,
+        ca: &ca,
+        serial: u64::MAX,
+        key_id: &key_id,
+        principal: &"p".repeat(32),
+        valid_after: u64::MAX,
+        valid_before: u64::MAX,
+        force_command: Some(&"c".repeat(MAX_SESSION_COMMAND_BYTES)),
+        source_address: Some(&"1".repeat(64)),
+        permit_pty: true,
+        permit_port_forwarding: true,
+    });
+    assert!(tbs.len() <= MAX_SIGNED_BYTES, "{}", tbs.len());
+}
+
+#[test]
+#[should_panic(expected = "E_CA_NOT_READY")]
+fn a_unit_cannot_be_delisted_before_its_key_arrives() {
+    let mut c = contract();
+    act_as("owner.testnet", UNIT_STORAGE_FEE);
+    let _ = c.list_unit("box-1".into(), terms());
+    act_as("owner.testnet", NearToken::from_yoctonear(0));
+    c.delist_unit("box-1".into());
 }
 
 #[test]
@@ -732,11 +839,11 @@ fn a_payment_cannot_buy_two_leases() {
 }
 
 #[test]
-fn a_mismatched_attestation_issues_nothing_and_frees_the_payment() {
+fn a_mismatched_attestation_issues_nothing_and_leaves_no_state() {
     let mut c = listed(foreign_terms());
     claim_with(&mut c, SSH_KEY, PAYER_SIGNATURE);
     attest(&mut c, 1, &"00".repeat(32));
-    assert_eq!(c.get_lease(U64(1)).unwrap().status, LeaseStatus::Failed);
+    assert!(c.get_lease(U64(1)).is_none());
     assert!(!is_spent(&c));
 }
 

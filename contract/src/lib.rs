@@ -8,7 +8,7 @@
 //! stock OpenSSH and needs no NEAR software, wallet or network access to the chain.
 //!
 //! Rent paid on another chain goes straight to the owner there. The contract never holds it. It
-//! asks the MPC network to read the payment, with no bridge, solver or oracle.
+//! asks the MPC network to read the payment, with no bridge or solver.
 
 mod evm;
 mod ssh;
@@ -42,6 +42,11 @@ const MAX_SIGNED_BYTES: usize = 1232;
 const CLOCK_SKEW_SECS: u64 = 30;
 /// Largest reply a callback will read. Every MPC reply is far smaller, so a longer one is an error.
 const MAX_PROMISE_RESULT_BYTES: usize = 4096;
+/// Longest signed session command. With the other certificate fields at their limits, this keeps a
+/// certificate well under MAX_SIGNED_BYTES, so cutting a key can never panic inside a callback.
+const MAX_SESSION_COMMAND_BYTES: usize = 640;
+/// A key being cut holds its unit for this long at most, in case a callback is ever lost.
+const IN_FLIGHT_TIMEOUT_SECS: u64 = 600;
 
 #[near]
 #[derive(BorshStorageKey)]
@@ -87,6 +92,7 @@ pub struct Terms {
     /// Length of one unit of rent. A certificate lasts `ticks * tick_secs`.
     pub tick_secs: u32,
     pub max_ticks: u32,
+    /// Zero makes a unit free, unless it has oreign rent, in which case NEAR is not accepted.
     pub near_per_tick: U128,
     pub foreign: Vec<ForeignRent>,
     /// When set, only these NEAR accounts may rent.
@@ -110,6 +116,7 @@ pub struct Unit {
     tenant_until: u64,
     /// The lease whose key is being cut. Blocks other requests until it resolves.
     in_flight: Option<u64>,
+    in_flight_at: u64,
 }
 
 #[near(serializers = [json])]
@@ -144,7 +151,17 @@ pub enum LeaseStatus {
 #[derive(Clone, Debug)]
 pub enum Paid {
     Near { payer: AccountId, rent: U128, change: U128 },
-    Foreign { payer: AccountId, chain: EvmChain, token: String, amount: U128, tx: String, log_index: u64 },
+    Foreign {
+        payer: AccountId,
+        chain: EvmChain,
+        token: String,
+        amount: U128,
+        tx: String,
+        log_index: u64,
+        /// Whether this lease marked the payment as used. Only a payment the network has confirmed
+        /// can be marked, so a forged claim can never block a real one.
+        spent: bool,
+    },
 }
 
 #[near(serializers = [borsh, json])]
@@ -260,6 +277,8 @@ fn validate_terms(t: &Terms) {
     require!(valid_principal(&t.principal), "E_BAD_PRINCIPAL");
     require!(t.principal != "root", "E_ROOT_NOT_ALLOWED");
     require!(t.command.as_ref().map_or(true, |c| !c.is_empty() && c.len() <= 300), "E_BAD_COMMAND");
+    let longest = ssh::session_command(u64::MAX, t.command.as_deref(), t.evict_user);
+    require!(longest.len() <= MAX_SESSION_COMMAND_BYTES, "E_BAD_COMMAND");
     require!((30..=86_400).contains(&t.tick_secs), "E_BAD_TICK");
     require!((1..=1_000).contains(&t.max_ticks), "E_BAD_MAX_TICKS");
     require!(t.foreign.len() <= 8, "E_TOO_MANY_RENTS");
@@ -351,6 +370,7 @@ impl Sublet {
                 tenant: None,
                 tenant_until: 0,
                 in_flight: None,
+                in_flight_at: 0,
             },
         );
 
@@ -416,7 +436,8 @@ impl Sublet {
     pub fn delist_unit(&mut self, id: String) {
         let (owner, seat) = {
             let unit = self.unit_of_caller(&id);
-            require!(unit.in_flight.is_none(), "E_BUSY");
+            require!(unit.ca.is_some(), "E_CA_NOT_READY");
+            require!(!is_busy(unit), "E_BUSY");
             (unit.owner.clone(), seat_key(&unit.owner, &unit.terms))
         };
         self.units.remove(&id);
@@ -433,9 +454,10 @@ impl Sublet {
         let unit = self.units.get_mut(&lease.unit).unwrap_or_else(|| refuse("E_NO_UNIT"));
         require!(unit.owner == caller, "E_NOT_OWNER");
         require!(!unit.paused, "E_PAUSED");
-        require!(unit.in_flight.is_none(), "E_BUSY");
+        require!(!is_busy(unit), "E_BUSY");
         assert_vacant(unit, &lease.tenant);
         unit.in_flight = Some(lease_id.0);
+        unit.in_flight_at = now_secs();
         self.cut_key(lease_id.0)
     }
 
@@ -472,6 +494,9 @@ impl Sublet {
         let tenant = env::predecessor_account_id();
         let unit = self.rentable_unit(&unit_id);
         require!(ticks >= 1 && ticks <= unit.terms.max_ticks, "E_BAD_TICKS");
+        // A price of zero means free only on a unit that takes no other rent. On a unit priced on
+        // another chain, it means NEAR is not accepted.
+        require!(unit.terms.near_per_tick.0 > 0 || unit.terms.foreign.is_empty(), "E_PAY_ON_ANOTHER_CHAIN");
         if let Some(list) = &unit.terms.allowlist {
             require!(list.contains(&tenant), "E_NOT_ALLOWED");
         }
@@ -568,13 +593,12 @@ impl Sublet {
             require!(signer == transfer.from, evm::Refusal::WrongPayer.code());
         }
 
-        // A payment that finds the unit occupied is refused before it is marked spent, so the
-        // tenant can claim it once the unit is free.
         let tenant = format!("0x{}", hex::encode(transfer.from));
         assert_vacant(&unit, &tenant);
+        require!(!self.spent.contains(&spent_key(chain, &log.transaction_hash, log.log_index)), "E_PAYMENT_ALREADY_USED");
 
-        let spent = spent_key(chain, &log.transaction_hash, log.log_index);
-        require!(self.spent.insert(spent), "E_PAYMENT_ALREADY_USED");
+        // Nothing is held yet. The unit stays free and the payment stays unspent until the network
+        // confirms it, so a forged claim blocks nobody. A failed claim is removed, not stored.
 
         let expected = evm::payload_hash(chain, rent.finality, &log).unwrap_or_else(|r| refuse(r.code()));
         let payer = env::predecessor_account_id();
@@ -592,6 +616,7 @@ impl Sublet {
                 amount: U128(transfer.amount),
                 tx: log.transaction_hash.clone(),
                 log_index: log.log_index,
+                spent: false,
             },
         );
 
@@ -628,19 +653,28 @@ impl Sublet {
         let attested = promise_value()
             .and_then(|raw| serde_json::from_slice::<Attestation>(&raw).ok())
             .is_some_and(|a| a.payload_hash == expected);
-        let rentable = self
-            .leases
-            .get(&id)
-            .and_then(|lease| self.units.get(&lease.unit))
-            .is_some_and(|unit| unit.ca.is_some() && !unit.paused);
-
-        if attested && rentable {
-            event("payment_verified", json!({"lease": id.to_string()}));
-            PromiseOrValue::Promise(self.cut_key(id))
-        } else {
-            self.close_refunded(id, LeaseStatus::Failed);
-            PromiseOrValue::Value(self.leases.get(&id).cloned())
+        let Some(lease) = self.leases.get(&id).cloned() else { return PromiseOrValue::Value(None) };
+        let ready = self.units.get(&lease.unit).is_some_and(|unit| {
+            unit.ca.is_some() && !unit.paused && !is_busy(unit) && !held_by_another(unit, &lease.tenant)
+        });
+        let payment = match &lease.paid {
+            Paid::Foreign { chain, tx, log_index, .. } => Some(spent_key(*chain, tx, *log_index)),
+            Paid::Near { .. } => None,
+        };
+        // Marked here, once the network has confirmed it, and not a moment before.
+        let confirmed = attested && ready && payment.is_some_and(|key| self.spent.insert(key));
+        if !confirmed {
+            return PromiseOrValue::Value(self.close_refunded(id, LeaseStatus::Failed));
         }
+        if let Some(Lease { paid: Paid::Foreign { spent, .. }, .. }) = self.leases.get_mut(&id) {
+            *spent = true;
+        }
+        if let Some(unit) = self.units.get_mut(&lease.unit) {
+            unit.in_flight = Some(id);
+            unit.in_flight_at = now_secs();
+        }
+        event("payment_verified", json!({"lease": id.to_string()}));
+        PromiseOrValue::Promise(self.cut_key(id))
     }
 
     #[private]
@@ -651,8 +685,7 @@ impl Sublet {
         }
         let Some(lease) = self.leases.get(&id).cloned() else { return None };
         let Some(unit) = self.units.get(&lease.unit).cloned() else {
-            self.close_refunded(id, LeaseStatus::Failed);
-            return self.leases.get(&id).cloned();
+            return self.close_refunded(id, LeaseStatus::Failed);
         };
         let tbs_bytes = hex::decode(&tbs).unwrap_or_default();
         let signature: Option<[u8; 64]> = promise_value()
@@ -664,8 +697,7 @@ impl Sublet {
             _ => None,
         };
         let Some(sig) = verified else {
-            self.close_refunded(id, LeaseStatus::Failed);
-            return self.leases.get(&id).cloned();
+            return self.close_refunded(id, LeaseStatus::Failed);
         };
 
         let cert = ssh::assemble(&tbs_bytes, &sig);
@@ -771,9 +803,16 @@ impl Sublet {
 
 /// Tenants share one Unix user, so they could read or kill each other's work. A tenant renewing
 /// their own lease is welcome. Anyone else waits until it ends.
+fn held_by_another(unit: &Unit, tenant: &str) -> bool {
+    now_secs() < unit.tenant_until && unit.tenant.as_deref() != Some(tenant)
+}
+
 fn assert_vacant(unit: &Unit, tenant: &str) {
-    let held_by_another = now_secs() < unit.tenant_until && unit.tenant.as_deref() != Some(tenant);
-    require!(!held_by_another, "E_OCCUPIED");
+    require!(!held_by_another(unit, tenant), "E_OCCUPIED");
+}
+
+fn is_busy(unit: &Unit) -> bool {
+    unit.in_flight.is_some() && now_secs() < unit.in_flight_at + IN_FLIGHT_TIMEOUT_SECS
 }
 
 /// The Ed25519 key that signed the current transaction.
@@ -815,7 +854,7 @@ impl Sublet {
         let unit = self.units.get(id).cloned().unwrap_or_else(|| refuse("E_NO_UNIT"));
         require!(unit.ca.is_some(), "E_CA_NOT_READY");
         require!(!unit.paused, "E_PAUSED");
-        require!(unit.in_flight.is_none(), "E_BUSY");
+        require!(!is_busy(&unit), "E_BUSY");
         unit
     }
 
@@ -836,9 +875,10 @@ impl Sublet {
     ) -> u64 {
         let id = self.next_lease;
         self.next_lease += 1;
-        if status != LeaseStatus::AwaitingApproval {
+        if status == LeaseStatus::Cutting {
             if let Some(unit) = self.units.get_mut(&unit) {
                 unit.in_flight = Some(id);
+                unit.in_flight_at = now_secs();
             }
         }
         self.leases.insert(
@@ -916,14 +956,14 @@ impl Sublet {
             .then(Self::ext(env::current_account_id()).with_static_gas(GAS_ON_SIGNED).on_signed(id, hex::encode(&tbs)))
     }
 
-    /// Ends a lease that produced no key, and returns what was held. A failed foreign claim frees
-    /// its payment so it can be claimed again.
-    fn close_refunded(&mut self, id: u64, status: LeaseStatus) {
-        let Some(lease) = self.leases.get_mut(&id) else { return };
+    /// Ends a lease that produced no key and returns what was held. The record is removed, because
+    /// its storage fee goes back too: a failed claim must not leave state that nobody paid for. A
+    /// payment this lease marked as used is freed, so it can be claimed again.
+    fn close_refunded(&mut self, id: u64, status: LeaseStatus) -> Option<Lease> {
+        let mut lease = self.leases.remove(&id)?;
         lease.status = status;
         let paid = lease.paid.clone();
-        let unit_id = lease.unit.clone();
-        if let Some(unit) = self.units.get_mut(&unit_id) {
+        if let Some(unit) = self.units.get_mut(&lease.unit) {
             if unit.in_flight == Some(id) {
                 unit.in_flight = None;
             }
@@ -938,12 +978,15 @@ impl Sublet {
                 let held = rent.0 + change.0 + LEASE_STORAGE_FEE.as_yoctonear();
                 refund(payer, held);
             }
-            Paid::Foreign { payer, chain, tx, log_index, .. } => {
-                self.spent.remove(&spent_key(chain, &tx, log_index));
+            Paid::Foreign { payer, chain, tx, log_index, spent, .. } => {
+                if spent {
+                    self.spent.remove(&spent_key(chain, &tx, log_index));
+                }
                 refund(payer, LEASE_STORAGE_FEE.as_yoctonear());
             }
         }
         event("lease_closed", json!({"lease": id.to_string(), "status": status}));
+        Some(lease)
     }
 }
 

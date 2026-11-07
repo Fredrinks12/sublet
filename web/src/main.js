@@ -215,12 +215,15 @@ function renderAttacks() {
 function rentMethods(unit) {
   const methods = [];
   const yocto = BigInt(unit.terms.near_per_tick);
-  methods.push({
-    kind: 'near',
-    label: yocto > 0n ? 'NEAR' : 'Free',
-    detail: 'A free testnet account is opened for you in this browser.',
-    total: (ticks) => (yocto > 0n ? `${near(yocto * BigInt(ticks))} NEAR` : 'Nothing'),
-  });
+  // A zero price on a unit with foreign rent means NEAR is not accepted, not that it is free.
+  if (yocto > 0n || !unit.terms.foreign.length) {
+    methods.push({
+      kind: 'near',
+      label: yocto > 0n ? 'NEAR' : 'Free',
+      detail: 'A free testnet account is opened for you in this browser.',
+      total: (ticks) => (yocto > 0n ? `${near(yocto * BigInt(ticks))} NEAR` : 'Nothing'),
+    });
+  }
   for (const rent of unit.terms.foreign) {
     const { amount, symbol } = foreignPrice(rent);
     methods.push({

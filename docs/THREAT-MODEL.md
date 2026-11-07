@@ -47,9 +47,13 @@ The timer runs as the tenant's own Unix user, though. A tenant who deliberately 
 
 ## What you do not have to trust
 
-- **The deployer.** The deployed contract has zero access keys, so nobody can change its code or sign as it. Run `sublet doctor` or `scripts/verify-evidence.mjs` to check. Reproducible builds are configured but not yet verified, so comparing the code hash needs the same toolchain.
+- **The deployer, to change the code later.** The deployed contract has zero access keys, so nobody can change its code or sign as it. Run `sublet doctor` or `scripts/verify-evidence.mjs` to check.
 - **Any server of ours.** The website is static and there is no backend.
 - **The certificate on chain.** Certificates are public by design. One is useless without the matching private key, which never leaves the tenant's machine. The Attack Lab tests this too.
+
+## What is not proven
+
+The build is not reproducible yet. Zero keys prove the deployed code cannot change. They do not prove it was built from this repository, because a reproducible build needs Docker, which our build machine does not have. A local build's hash may differ from the deployed one, and `scripts/verify-evidence.mjs` reports that as a note. To check behaviour rather than origin, run the Attack Lab against the deployed contract.
 
 ## Failure cases
 

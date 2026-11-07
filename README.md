@@ -20,7 +20,7 @@ Meanwhile plenty of machines sit idle. To let a stranger use one for ten minutes
 
 1. **An owner adds one line to `sshd_config`**, trusting a public key that only this contract can use. Nothing is installed. The server never talks to a blockchain.
 2. **A tenant pays**, in NEAR or in USDC on Base. Rent on Base goes straight to the owner, so the contract never holds it.
-3. **The contract checks the rent.** For Base, it asks NEAR's MPC network to read the payment, with no bridge, solver or oracle.
+3. **The contract checks the rent.** For Base, it asks NEAR's MPC network to read the payment, with no bridge or solver.
 4. **The contract writes an OpenSSH certificate** from the owner's published terms, and the MPC network signs those exact bytes.
 5. **Plain `ssh` works.** When the time runs out, the session ends and the key stops working.
 
@@ -69,7 +69,7 @@ cd contract
 cargo test --lib
 ```
 
-You should see `test result: ok. 88 passed`. One test reproduces a hash the live testnet MPC network really signed.
+You should see `test result: ok. 97 passed`. One test reproduces a hash the live testnet MPC network really signed.
 
 ### Rent a machine on the website
 

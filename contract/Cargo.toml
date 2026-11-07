@@ -5,18 +5,6 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 
-[package.metadata.near.reproducible_build]
-image = "sourcescan/cargo-near:0.23.0-rust-1.99.1"
-image_digest = ""
-passed_env = []
-container_build_command = [
-    "cargo",
-    "near",
-    "build",
-    "non-reproducible-wasm",
-    "--locked",
-]
-
 [lib]
 crate-type = ["cdylib", "rlib"]
 

@@ -15,6 +15,7 @@ export function createTools({ near, contract, maxNear = 1 }) {
       id: unit.id,
       title: unit.terms.title,
       description: unit.terms.blurb,
+      accepts_near: BigInt(unit.terms.near_per_tick) > 0n || unit.terms.foreign.length === 0,
       near_per_minute: Number((BigInt(unit.terms.near_per_tick) * 60n * 1000000n) / BigInt(seconds) / ONE_NEAR) / 1e6,
       billing_seconds: seconds,
       longest_lease_minutes: (seconds * unit.terms.max_ticks) / 60,
@@ -29,7 +30,7 @@ export function createTools({ near, contract, maxNear = 1 }) {
     /** Machines for rent, cheapest first, with whether each is free right now. */
     async listMachines() {
       const units = await near.view(contract, 'list_units', { limit: 100 });
-      return units.map(describe).sort((a, b) => a.near_per_minute - b.near_per_minute);
+      return units.map(describe).filter((u) => u.accepts_near).sort((a, b) => a.near_per_minute - b.near_per_minute);
     },
 
     /** Rents a machine. Refuses to go over the session's spending limit. */

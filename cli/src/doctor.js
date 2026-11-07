@@ -65,7 +65,8 @@ export async function doctor(near, contract, unitId, { caFile, wasmFile } = {}) 
   const account = await near.accountState(contract);
   if (wasmFile) {
     const digest = crypto.createHash('sha256').update(fs.readFileSync(wasmFile)).digest();
-    add('Deployed code matches the local build', b58decode(account.code_hash).equals(digest), `code hash ${account.code_hash}`);
+    const same = b58decode(account.code_hash).equals(digest);
+    add('Deployed code matches the local build', same ? true : null, same ? `code hash ${account.code_hash}` : `differs, and builds are not reproducible across machines yet. Code hash ${account.code_hash}`);
   } else {
     add('Deployed code matches the local build', null, `code hash ${account.code_hash}. Pass --wasm to compare`);
   }

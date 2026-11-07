@@ -130,6 +130,10 @@ const baseUnit = await list(`lab-base-${stamp}`, {
   near_per_tick: '0',
   foreign: [{ chain: 'Base', token: USDC, pay_to: payTo, amount_per_tick: '1', finality: 'Latest' }],
 });
+const mixedUnit = await list(`lab-mixed-${stamp}`, {
+  principal: 'lab-mixed',
+  foreign: [{ chain: 'Base', token: USDC, pay_to: payTo, amount_per_tick: '1', finality: 'Latest' }],
+});
 console.log(`lab units listed, with suffix ${stamp}`);
 
 await owner.call(contract, 'set_paused', { id: pausedUnit.id, paused: true }, { gasTera: 30 });
@@ -224,6 +228,9 @@ await refused('Pass off a different event as a transfer', 'E_NOT_A_TRANSFER', st
 
 await refused('Claim on a chain the owner does not accept', 'E_CHAIN_NOT_ACCEPTED', stranger, 'rent_foreign',
   { ...(await claimFor(log, baseUnit)), chain: 'Polygon' }, { gasTera: 300, depositYocto: FEE });
+
+await refused('Rent a machine priced on Base for free through NEAR', 'E_PAY_ON_ANOTHER_CHAIN', stranger, 'rent',
+  { unit_id: baseUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { depositYocto: FEE });
 
 // ---- SSH attacks --------------------------------------------------------------------------------
 
@@ -324,19 +331,31 @@ const invented = {
   data: `0x${'0'.repeat(56)}ffffffff`,
   topics: [log.topics[0], attackerTopic, log.topics[2]],
 };
-const inventedArgs = await claimFor(invented, baseUnit, attacker);
+const inventedArgs = await claimFor(invented, mixedUnit, attacker);
 const inventedHash = await stranger.submit(contract, [
   (await import('../cli/src/near.js')).actions.functionCall('rent_foreign', inventedArgs, 300n * 10n ** 12n, FEE),
 ]);
 const t0 = Date.now();
+// The network takes minutes to refuse. Until it does, this claim must hold nothing at all.
+await new Promise((resolve) => setTimeout(resolve, 8000));
+const heldLease = (await reader.view(contract, 'recent_leases', { limit: 1 }))[0];
+const stillPending = heldLease?.status === 'Verifying';
+const blockedPayment = await reader.view(contract, 'is_payment_spent', { chain: 'Base', tx: invented.transaction_hash, log_index: invented.log_index });
+record('Block a real payment by forging a claim on its transaction', 'The real payment stays claimable',
+  stillPending && !blockedPayment ? 'The real payment stays claimable' : `pending ${stillPending}, blocked ${blockedPayment}`, inventedHash, null, strangerId);
+const whileHeld = await tenant.call(contract, 'rent', { unit_id: mixedUnit.id, ticks: 1, ssh_key: sshKey.publicLine, source_address: null }, { gasTera: 150, depositYocto: 2n * FEE });
+const tiedUp = stillPending && whileHeld.success;
+record('Tie up a machine with a claim the network will refuse', 'Other tenants can still rent',
+  tiedUp ? 'Other tenants can still rent' : `pending ${stillPending}: ${whileHeld.error ?? 'rent went through'}`, whileHeld.hash, null, env.TENANT);
 const inventedOutcome = await stranger.outcome(inventedHash, strangerId, 480_000);
 const seconds = ((Date.now() - t0) / 1000).toFixed(0);
 const inventedLease = inventedOutcome.value;
 const issued = Boolean(inventedLease?.certificate);
 const reclaimed = !(await reader.view(contract, 'is_payment_spent', { chain: 'Base', tx: invented.transaction_hash, log_index: invented.log_index }));
+const leftState = await reader.view(contract, 'get_lease', { id: String(heldLease?.id ?? 0) });
 record('Invent a payment that never happened', 'No key cut',
   issued ? 'KEY ISSUED' : 'No key cut', inventedHash,
-  `The MPC network would not attest it. Lease status ${inventedLease?.status ?? 'none'} after ${seconds}s. Payment marked free again: ${reclaimed}.`, strangerId);
+  `The MPC network would not attest it. Lease status ${inventedLease?.status ?? 'none'} after ${seconds}s. The real payment stayed claimable: ${reclaimed}. Left no record in contract state: ${leftState === null}.`, strangerId);
 
 serial.close();
 fs.rmSync(scratch, { recursive: true, force: true });
