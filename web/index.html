@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sublet</title>
+    <meta
+      name="description"
+      content="Rent out any Linux machine by the minute, with nothing to install. A NEAR contract checks the rent and cuts a key that expires on its own."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="dateline">
+        <span>NEAR testnet edition. <button type="button" class="edition" id="edition"></button></span>
+        <span id="today"></span>
+        <span>Contract <code id="contract-name"></code></span>
+      </div>
+      <div class="nameplate">
+        <a class="wordmark" href="#top" id="top">Sublet</a>
+        <p class="motto">Computers to let, by the minute</p>
+      </div>
+      <nav class="sections" aria-label="Sections">
+        <a href="#to-let">To let</a>
+        <a href="#own">Let yours</a>
+        <a href="#how">How it works</a>
+        <a href="#check">Check it yourself</a>
+        <a href="#break">Try to break it</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="lead" aria-labelledby="lead-title">
+        <div class="lead-copy">
+          <h1 id="lead-title">Rent out a Linux machine by the minute.</h1>
+          <p class="deck">
+            Add one line to <code>sshd_config</code> and install nothing. A NEAR contract checks the rent, then cuts a
+            key that expires on its own. Your server never talks to a blockchain.
+          </p>
+          <div class="actions">
+            <a class="btn" href="#to-let">See what's to let</a>
+            <a class="btn ghost" href="#own">Let your machine</a>
+          </div>
+        </div>
+        <figure class="board" aria-label="A to let sign">
+          <div class="board-face">
+            <div class="board-band">To let</div>
+            <p class="board-count"><span id="vacant-count">&nbsp;</span></p>
+            <p class="board-line">No daemon. No wallet on the server.</p>
+            <p class="board-agent">Apply to the contract</p>
+          </div>
+          <div class="board-post"></div>
+        </figure>
+      </section>
+
+      <section class="replay" aria-labelledby="replay-title">
+        <h2 id="replay-title" class="visually-hidden">One lease, start to finish</h2>
+        <div class="terminal" role="img" aria-label="A terminal: login is refused, a lease is rented, login works, the lease ends, and login is refused again.">
+          <div class="terminal-bar"><span>tenant@laptop</span><span class="terminal-note">Real output from stock Debian 13 and OpenSSH 10</span></div>
+          <pre id="terminal"></pre>
+        </div>
+      </section>
+
+      <section id="to-let" class="classifieds" aria-labelledby="to-let-title">
+        <header class="section-head">
+          <h2 id="to-let-title">To let</h2>
+          <p>Every listing below is read live from the contract. Prices and rules are public.</p>
+        </header>
+        <div id="ads" class="ads"><p class="ads-empty">Reading the contract&hellip;</p></div>
+      </section>
+
+      <section id="own" class="own" aria-labelledby="own-title">
+        <header class="section-head">
+          <h2 id="own-title">Let yours</h2>
+          <p>Already paying for a box that sits idle? This is all it takes.</p>
+        </header>
+        <ol class="steps">
+          <li>
+            <h3>Publish your terms</h3>
+            <p>Name your price, the Unix user tenants log in as, and how long a tick lasts. The terms live in the contract, where anyone can read them.</p>
+            <pre><code>sublet list helsinki-8c terms.json</code></pre>
+          </li>
+          <li>
+            <h3>Trust one key</h3>
+            <p>The contract gets its own key for your machine, derived by the MPC network. No person ever holds it.</p>
+            <pre><code>echo 'ssh-ed25519 AAAA&hellip;' | sudo tee /etc/ssh/sublet_ca.pub
+echo 'TrustedUserCAKeys /etc/ssh/sublet_ca.pub' \
+  | sudo tee /etc/ssh/sshd_config.d/sublet.conf
+sudo systemctl reload ssh</code></pre>
+          </li>
+          <li>
+            <h3>Get paid directly</h3>
+            <p>Rent on Base goes straight to your own address. Rent in NEAR is forwarded the moment a key exists. The contract never keeps your money.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section id="how" class="how" aria-labelledby="how-title">
+        <header class="section-head">
+          <h2 id="how-title">What happens when you pay</h2>
+          <p>Paying in USDC on Base. No bridge, no solver and no oracle. Each row is one step.</p>
+        </header>
+        <div class="lanes" role="table" aria-label="The steps of a lease, by who performs them">
+          <div class="lane-head" role="row">
+            <span role="columnheader">Base</span><span role="columnheader">NEAR contract</span
+            ><span role="columnheader">MPC network</span><span role="columnheader">Your server</span>
+          </div>
+          <div class="lane-row" role="row"><p role="cell" class="at-1"><b>1</b> Tenant sends USDC to the owner's address.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-2"><b>2</b> Anyone submits the claim. The payer's signature ties it to one SSH key, so a watcher cannot steal it.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-3"><b>3</b> Nodes read the transfer from Base and sign what they found.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-2"><b>4</b> Contract rebuilds the hash from the claim. Token, owner and amount must all match.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-2"><b>5</b> Contract writes the certificate from the owner's terms: who, for how long, and which command.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-3"><b>6</b> Nodes sign those exact bytes. No single node ever holds the key.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-4"><b>7</b> Stock OpenSSH checks the signature, offline, and lets the tenant in.</p></div>
+          <div class="lane-row" role="row"><p role="cell" class="at-4"><b>8</b> Time's up. The session ends and the key stops working.</p></div>
+        </div>
+      </section>
+
+      <div class="two-up">
+        <section id="check" class="check" aria-labelledby="check-title">
+          <header class="section-head">
+            <h2 id="check-title">Check it yourself</h2>
+            <p>Run live from your browser against public data.</p>
+          </header>
+          <ul id="checks" class="checks"></ul>
+        </section>
+
+        <section class="ledger" aria-labelledby="ledger-title">
+          <header class="section-head">
+            <h2 id="ledger-title">Keys cut</h2>
+            <p>Every lease is on the public record.</p>
+          </header>
+          <ol id="ledger" class="ledger-list"></ol>
+        </section>
+      </div>
+
+      <section id="break" class="break" aria-labelledby="break-title">
+        <header class="section-head">
+          <h2 id="break-title">Try to break it</h2>
+          <p>Each attack below was run against the live testnet contract and real OpenSSH. Each refusal has a code.</p>
+        </header>
+        <table class="attacks">
+          <thead>
+            <tr><th scope="col">The attack</th><th scope="col">What stopped it</th></tr>
+          </thead>
+          <tbody id="attacks"></tbody>
+        </table>
+        <p class="limits">
+          <b>What this does not stop.</b> After expiry nobody can open a new session. An open session is ended by a timer
+          that runs as the tenant, so a hostile tenant could kill it and stay until they disconnect. If you let to
+          strangers, run leases in a container. The contract is unaudited and runs on testnet.
+        </p>
+      </section>
+    </main>
+
+    <footer class="colophon">
+      <p>Built at NEAR HACKATHON. MIT licensed. Testnet only, unaudited.</p>
+      <p><span id="pocket-status"></span></p>
+    </footer>
+
+    <dialog id="rent" class="rent" aria-labelledby="rent-title">
+      <form method="dialog" class="rent-close"><button aria-label="Close">&times;</button></form>
+      <div id="rent-body"></div>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

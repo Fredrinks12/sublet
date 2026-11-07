@@ -76,6 +76,7 @@ export class Serial {
     const tag = `__S${Date.now().toString(36)}__`;
     this.buffer = '';
     this.send(`${command}; echo ${tag}$?${tag}\n`);
+    // The opening tag must follow output, not the echoed command, so match on the digits after it.
     const match = await this.expect(new RegExp(`([\\s\\S]*?)${tag}(\\d+)${tag}`), timeoutMs);
     const output = match[1].replaceAll('\r', '').trim();
     const code = Number(match[2]);
