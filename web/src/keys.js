@@ -72,6 +72,6 @@ export function loginScript({ lease, unit, key }) {
     `KEY`,
     `chmod 600 id_ed25519`,
     `echo '${lease.certificate}' > id_ed25519-cert.pub`,
-    `ssh -i id_ed25519 -o CertificateFile=id_ed25519-cert.pub -o IdentitiesOnly=yes -p ${unit.terms.port} ${unit.terms.principal}@${unit.terms.host}`,
+    `ssh -i id_ed25519 -o CertificateFile=id_ed25519-cert.pub -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -p ${unit.terms.port} ${unit.terms.principal}@${unit.terms.host}`,
   ].join('\n');
 }

@@ -95,6 +95,9 @@ export function sshArgs({ keyPath, certPath, host, port, user, knownHosts, extra
     '-i', keyPath,
     '-o', `CertificateFile=${certPath}`,
     '-o', 'IdentitiesOnly=yes',
+    // A lease is a key and nothing else. Without this, an expired lease falls back to asking for
+    // a password the tenant never had.
+    '-o', 'PreferredAuthentications=publickey',
     '-o', 'StrictHostKeyChecking=accept-new',
     ...extra,
   ];

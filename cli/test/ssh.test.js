@@ -36,3 +36,8 @@ test('ssh arguments send only the lease key', () => {
   assert.ok(args.includes('CertificateFile=c'));
   assert.equal(args.at(-1), 'u@h');
 });
+
+test('ssh never falls back to asking for a password', () => {
+  const args = sshArgs({ keyPath: 'k', certPath: 'c', host: 'h', port: 2222, user: 'u' });
+  assert.ok(args.includes('PreferredAuthentications=publickey'));
+});

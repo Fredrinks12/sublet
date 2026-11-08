@@ -94,7 +94,7 @@ function leaseSummary({ lease, hash, unit, keyPath, certPath, paymentTx }) {
     `  key           ${keyPath}`,
     `  certificate   ${certPath}`,
     `  connect       sublet ssh ${lease.id}`,
-    `  or            ssh -i "${keyPath}" -o CertificateFile="${certPath}" -p ${unit.terms.port} ${unit.terms.principal}@${unit.terms.host}`,
+    `  or            ssh -i "${keyPath}" -o CertificateFile="${certPath}" -o IdentitiesOnly=yes -o PreferredAuthentications=publickey -p ${unit.terms.port} ${unit.terms.principal}@${unit.terms.host}`,
   ]
     .filter(Boolean)
     .join('\n');
