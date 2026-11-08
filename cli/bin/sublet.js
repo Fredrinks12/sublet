@@ -16,6 +16,7 @@ Find a machine
 
 Rent one
   sublet rent <unit> [--ticks 1]       pay in NEAR, get a key
+  sublet cancel <lease>                withdraw a request the owner has not answered
   sublet renew <unit> [--ticks 1]      buy more time, keeping running sessions alive
   sublet pay <unit> --chain Base       pay on another chain, get a key
   sublet claim <unit> --chain Base --tx 0x...   claim a payment you already made
@@ -142,8 +143,14 @@ const commands = {
     const unit = requireArg(rest[0], '<unit>');
     const result = await rentWithNear(near, contract, unit, Number(flags.ticks), { sourceAddress: flags['source-address'] });
     print(result, () => (result.lease.status === 'AwaitingApproval'
-      ? `Lease ${result.lease.id} is waiting for the owner to approve it.`
+      ? `Lease ${result.lease.id} is waiting for the owner to approve it.\nTo withdraw it and get back everything you paid: sublet cancel ${result.lease.id}`
       : leaseSummary(result)));
+  },
+
+  async cancel() {
+    const outcome = await near.call(contract, 'cancel', { lease_id: requireArg(rest[0], '<lease>') }, { gasTera: 30 });
+    if (!outcome.success) throw new Error(outcome.error);
+    print(outcome, () => `Withdrew lease ${rest[0]}. Everything you paid for it was refunded.\n  NEAR tx       ${near.config.explorer}${outcome.hash}`);
   },
 
   async renew() {

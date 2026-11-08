@@ -1,3 +1,12 @@
+## A request the owner never answered
+
+The Attack Lab runs on 7 November left two requests on machines that need the owner's approval. The owner never answered, and later delisted both machines. About 17 hours later, the tenant withdrew both with `sublet cancel`. Each returned the whole 0.04 NEAR deposit, made up of rent, change and the storage fee. Both left no record in contract state.
+
+| Lease | Withdrawn | Refunded | Event |
+| --- | --- | --- | --- |
+| 1 | [`DStokjsm...jN5i`](https://testnet.nearblocks.io/txns/DStokjsmzmNYQMdifUW1KtprdZNKqDB9tcseVDtnjN5i) | 0.04 NEAR to the tenant | `lease_closed`, `Cancelled` |
+| 7 | [`Ea9sTmTj...ZvQ3`](https://testnet.nearblocks.io/txns/Ea9sTmTjC1ZsRjdoJyKsEu5TjPWMEeYkwoMGXhmDvZQ3) | 0.04 NEAR to the tenant | `lease_closed`, `Cancelled` |
+
 ## A real payment on Base, read by the MPC network
 
 The MPC network read a real USDC transfer on Base Sepolia, the contract rebuilt the same hash from public data, and stock OpenSSH accepted the certificate that came out. The whole claim took 14.6 seconds.

@@ -152,7 +152,7 @@ These are the short answers. [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) has th
 | An owner loses their NEAR key | The server is still theirs. Removing one line stops new logins. |
 | A hostile owner takes rent and goes dark | The tenant loses at most the ticks they bought. Buy one at a time. |
 | A hostile tenant | They cannot log in after expiry. They could kill the timer and outstay an open session, so use a container for strangers. |
-| An owner is offline during an approval | The tenant can cancel and get a full refund. |
+| An owner is offline during an approval | The tenant runs `sublet cancel <lease>` and gets back everything they paid. This has [run on testnet](docs/EVIDENCE.md#a-request-the-owner-never-answered). |
 | NEAR or the MPC network stops | No new keys are cut. Live ones work until they expire. |
 | The MPC network will not confirm a payment | The claim fails and the payment stays unspent, so it can be claimed again. |
 

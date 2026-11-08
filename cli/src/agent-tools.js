@@ -43,10 +43,16 @@ export function createTools({ near, contract, maxNear = 1 }) {
         throw new Error(`Over budget: this lease costs ${Number(cost / 10n ** 18n) / 1e6} NEAR and the limit is ${maxNear} NEAR.`);
       }
       const { lease, hash } = await rentWithNear(near, contract, unitId, ticks);
-      if (lease.status !== 'Issued') {
-        return { lease: lease.id, status: lease.status, note: 'The owner must approve this lease before a key is cut.' };
-      }
+      // The rent is held from the moment it is paid, even while an owner decides, so it counts now.
       spentYocto += cost;
+      if (lease.status !== 'Issued') {
+        return {
+          lease: lease.id,
+          status: lease.status,
+          note: `The owner must approve this lease before a key is cut. Check on it with lease_status. To withdraw it for a full refund, run "sublet cancel ${lease.id}" as this NEAR account.`,
+          spent_near: Number(spentYocto / 10n ** 18n) / 1e6,
+        };
+      }
       return {
         lease: lease.id,
         status: lease.status,
@@ -70,8 +76,10 @@ export function createTools({ near, contract, maxNear = 1 }) {
     async leaseStatus({ lease: leaseId }) {
       const lease = await near.view(contract, 'get_lease', { id: String(leaseId) });
       if (!lease) throw new Error(`No lease ${leaseId}.`);
-      const left = Number(lease.valid_before) - Math.floor(Date.now() / 1000);
-      return { lease: lease.id, unit: lease.unit, status: lease.status, seconds_left: Math.max(0, left), expired: left <= 0 };
+      // A request still waiting for its owner has no end time yet, so it has not expired.
+      const issued = lease.status === 'Issued';
+      const left = issued ? Number(lease.valid_before) - Math.floor(Date.now() / 1000) : 0;
+      return { lease: lease.id, unit: lease.unit, status: lease.status, seconds_left: Math.max(0, left), expired: issued && left <= 0 };
     },
   };
 }

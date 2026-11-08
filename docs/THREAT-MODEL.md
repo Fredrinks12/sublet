@@ -63,7 +63,7 @@ The build is not reproducible yet. Zero keys prove the deployed code cannot chan
 | An owner's key is stolen | The thief can change the terms, or redirect rent. They cannot reach the server unless it still trusts that unit's key, in which case they could rent it for free. Remove the trust line. |
 | A tenant loses their private key | They wait for the lease to end. Certificates are bound to one key, and the contract cannot move a lease to a new one. |
 | A tenant goes offline mid-lease | The lease runs out. Nothing more is owed. |
-| An owner goes offline | Tenants lose at most the ticks they bought. A pending approval can be cancelled by the tenant, with a full refund. |
+| An owner goes offline | Tenants lose at most the ticks they bought. A tenant can withdraw a request the owner has not answered with `sublet cancel <lease>`, and gets back everything they paid, even if the owner has since delisted the machine. |
 | NEAR or the MPC network stops | No new keys are cut. Live certificates work until they expire. The owner's own SSH access never depended on any of this, so they are not locked out. |
 | The MPC network will not confirm a real payment | The claim fails after about two minutes, the payment is marked unspent, and the tenant can claim it again. |
 | Base payment arrives while the unit is occupied | The claim is refused with `E_OCCUPIED` and the payment stays unspent. The tenant can claim it when the unit is free. |
