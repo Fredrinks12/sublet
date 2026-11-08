@@ -28,6 +28,7 @@ Each of these is a certificate on the public record. The verifier checks each on
 | 15 | debian-vm | sublet-tenant-0ekmh.testnet | 1 | Issued |
 | 16 | debian-vm | sublet-tenant-0ekmh.testnet | 2 | Issued |
 | 17 | debian-vm | sublet-tenant-0ekmh.testnet | 1 | Issued |
+| 19 | debian-vm | sublet-tenant-0ekmh.testnet | 2 | Issued |
 
 ## The Attack Lab
 
