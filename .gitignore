@@ -9,3 +9,4 @@ id_*
 .sublet/
 *.log
 demo/explainer/out/
+demo/explainer/*/out/

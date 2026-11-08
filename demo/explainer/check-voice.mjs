@@ -1,6 +1,7 @@
 // Nobody here can listen to the narration, so this checks it another way: a separate speech
 // recognition model transcribes each line, and the words it heard are compared with the script.
 //   node check-voice.mjs [file.wav]
+//   FILM=simple node check-voice.mjs    the film in ./simple
 //
 // Each line is cut out using the caption timings, so a good score on the finished video's audio also
 // shows that the voice lines up with the captions.
@@ -10,8 +11,9 @@ import { fileURLToPath } from 'node:url';
 import { pipeline } from '@huggingface/transformers';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const timeline = JSON.parse(fs.readFileSync(path.join(here, 'out', 'timeline.json'), 'utf8'));
-const wav = fs.readFileSync(process.argv[2] ?? path.join(here, 'out', 'voice.wav'));
+const filmDir = path.join(here, process.env.FILM ?? '');
+const timeline = JSON.parse(fs.readFileSync(path.join(filmDir, 'out', 'timeline.json'), 'utf8'));
+const wav = fs.readFileSync(process.argv[2] ?? path.join(filmDir, 'out', 'voice.wav'));
 const rate = wav.readUInt32LE(24);
 const dataAt = wav.indexOf('data', 12) + 8;
 const samples = new Float32Array(Math.floor((wav.length - dataAt) / 2));
@@ -30,6 +32,8 @@ function slice16k(start, end) {
 const words = (text) => text
   .toLowerCase()
   .replace(/thirty-seven/g, '37')
+  .replace(/\bkey-?card/g, 'key card')
+  .replace(/\bsignup\b/g, 'sign up')
   .replace(/\ba\.?\s?i\b/g, 'ai')
   .replace(/\b([a-z])\.\s?/g, '$1')
   .replace(/\b(s) (s) (h)\b/g, 'ssh')

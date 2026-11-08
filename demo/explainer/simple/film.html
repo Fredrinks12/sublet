@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sublet in plain words</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --paper: #f3eee1;
+        --deep: #e8e0cd;
+        --ink: #1b1915;
+        --soft: #5b5447;
+        --hair: #b9ae97;
+        --stamp: #bf2f1b;
+        --vacant: #2b6a4c;
+        --card: #fffdf8;
+        --gold: #e3b23c;
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { width: 1280px; height: 720px; overflow: hidden; background: var(--paper); color: var(--ink); font-family: 'Source Serif 4', Georgia, serif; }
+      #stage { position: absolute; inset: 0 0 92px 0; overflow: hidden; }
+      .scene { position: absolute; inset: 0; display: none; }
+      .abs { position: absolute; }
+      svg { overflow: visible; }
+
+      .chapter { position: absolute; top: 22px; left: 48px; display: flex; align-items: center; gap: 12px; font-family: 'Archivo Black', Impact, sans-serif; font-size: 17px; letter-spacing: 0.08em; text-transform: uppercase; }
+      .chapter b { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--stamp); color: #fff8ee; font-size: 17px; font-weight: 400; letter-spacing: 0; }
+      .brand { position: absolute; top: 17px; right: 48px; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 27px; letter-spacing: -0.03em; }
+      .big { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 64px; line-height: 1.06; letter-spacing: -0.012em; word-spacing: 0.12em; font-variation-settings: 'opsz' 144; text-wrap: balance; }
+      .mid { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 34px; line-height: 1.18; letter-spacing: -0.012em; }
+      .body { font-size: 25px; line-height: 1.3; }
+      .soft { color: var(--soft); }
+      .red { color: var(--stamp); }
+
+      .card { position: absolute; background: var(--card); border: 2px solid var(--ink); box-shadow: 6px 7px 0 rgb(0 0 0 / 0.14); }
+      .card svg { display: block; overflow: hidden; }
+      .card h3 { padding: 6px 22px 0; font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 29px; line-height: 1.08; letter-spacing: -0.008em; word-spacing: 0.06em; text-wrap: balance; }
+      #paycoin { z-index: 5; }
+      .card p { padding: 8px 22px 0; font-size: 21px; line-height: 1.25; color: var(--soft); }
+      .card p.red { color: var(--stamp); font-weight: 600; }
+      .step.on { border-color: var(--stamp); box-shadow: 0 0 0 2px var(--stamp), 6px 7px 0 rgb(0 0 0 / 0.14); }
+      .num { position: absolute; left: -18px; top: -18px; z-index: 1; width: 46px; height: 46px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 50%; background: var(--stamp); color: #fff8ee; font-family: 'Archivo Black', Impact, sans-serif; font-size: 22px; }
+
+      .ticks li { list-style: none; position: relative; padding: 8px 0 8px 54px; font-size: 28px; line-height: 1.22; font-weight: 600; }
+      .ticks li::before { content: ''; position: absolute; left: 0; top: 9px; width: 36px; height: 36px; border-radius: 50%; background: var(--vacant); }
+      .ticks li::after { content: ''; position: absolute; left: 10px; top: 19px; width: 16px; height: 8px; border-left: 4px solid #fff8ee; border-bottom: 4px solid #fff8ee; rotate: -45deg; }
+
+      .keycard { background: var(--card); border: 2px solid var(--ink); border-radius: 20px; box-shadow: 8px 9px 0 rgb(0 0 0 / 0.16); overflow: hidden; }
+      .kc-band { position: relative; background: var(--stamp); color: #fff8ee; font-family: 'Archivo Black', Impact, sans-serif; font-size: 36px; line-height: 1.2; text-transform: uppercase; letter-spacing: 0.02em; padding: 16px 26px 12px; }
+      .kc-chip { position: absolute; right: 26px; top: 15px; width: 58px; height: 44px; border: 3px solid var(--ink); border-radius: 8px; background: var(--gold); }
+      .kc-row { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 26px; border-top: 1px solid var(--hair); font-size: 24px; }
+      .kc-row b { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 30px; letter-spacing: -0.01em; }
+      .kc-status { margin: 10px 26px 22px; padding: 10px 14px; border: 2px solid var(--ink); border-radius: 10px; text-align: center; font-family: 'Archivo Black', Impact, sans-serif; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; color: #fff8ee; background: var(--vacant); }
+
+      .wordmark { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 150px; line-height: 1; letter-spacing: -0.035em; font-variation-settings: 'opsz' 144; }
+      .pop { transform-box: fill-box; transform-origin: center; }
+
+      .t-band { font-family: 'Archivo Black', Impact, sans-serif; font-size: 13px; letter-spacing: 0.08em; fill: #fff8ee; }
+      .t-sign { font-family: 'Archivo Black', Impact, sans-serif; font-size: 15px; letter-spacing: 0.06em; fill: #fff8ee; }
+      .t-tag { font-family: 'Archivo Black', Impact, sans-serif; font-size: 12.5px; letter-spacing: 0.02em; fill: var(--ink); }
+      .t-stamp { font-family: 'Archivo Black', Impact, sans-serif; font-size: 17px; letter-spacing: 0.04em; fill: var(--stamp); }
+      .t-stamp.big-stamp { font-size: 22px; }
+      .t-small { font-family: 'Archivo Black', Impact, sans-serif; font-size: 15px; letter-spacing: 0.06em; fill: var(--ink); }
+      .t-paid { font-family: 'Archivo Black', Impact, sans-serif; font-size: 13px; letter-spacing: 0.08em; fill: var(--vacant); }
+      .t-pill { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 21px; fill: var(--ink); }
+      .t-formtitle { font-family: 'Fraunces', Georgia, serif; font-weight: 900; font-size: 22px; fill: var(--ink); }
+      .t-field { font-family: 'Source Serif 4', Georgia, serif; font-size: 14px; fill: var(--soft); }
+      .t-zzz { font-family: 'Source Serif 4', Georgia, serif; font-style: italic; font-size: 30px; fill: #8f8875; }
+      .t-timer { font-family: 'Archivo Black', Impact, sans-serif; font-size: 20px; fill: var(--ink); }
+      .t-label { font-family: 'Fraunces', Georgia, serif; font-weight: 700; font-size: 28px; fill: var(--ink); }
+      .t-sub { font-family: 'Source Serif 4', Georgia, serif; font-size: 22px; fill: var(--soft); }
+      .t-sub.no { fill: var(--stamp); font-weight: 600; }
+
+      #caption { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; padding: 0 64px; display: flex; align-items: center; justify-content: center; text-align: center; background: var(--paper); border-top: 3px double var(--ink); font-size: 28px; line-height: 1.2; font-weight: 600; color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <section class="scene" data-scene="idle">
+        <span class="chapter"><b>1</b>The problem</span>
+        <span class="brand">Sublet</span>
+        <div class="abs" style="left: 56px; top: 168px; width: 560px">
+          <p class="big" data-at="0">Most computers sit idle.</p>
+          <p class="mid" data-at="1" style="margin-top: 30px">Their owners could rent them out, even for a few minutes.</p>
+        </div>
+        <svg id="idle-art" class="abs" style="left: 630px; top: 64px" width="610" height="500" viewBox="0 0 610 500"></svg>
+      </section>
+
+      <section class="scene" data-scene="risky">
+        <span class="chapter"><b>1</b>The problem</span>
+        <span class="brand">Sublet</span>
+        <p class="big abs" data-at="2" style="left: 56px; top: 84px; width: 1170px; font-size: 56px">But lending one to a stranger is hard.</p>
+        <div class="card" data-at="3" style="left: 48px; top: 192px; width: 360px; height: 376px">
+          <svg id="art-key" width="356" height="212" viewBox="0 0 356 212"></svg>
+          <h3>A key that never expires</h3>
+          <p>It keeps working until you take it back.</p>
+        </div>
+        <div class="card" data-at="4" style="left: 460px; top: 192px; width: 360px; height: 376px">
+          <svg id="art-company" width="356" height="212" viewBox="0 0 356 212"></svg>
+          <h3>A company in the middle</h3>
+          <p>And its software on your computer.</p>
+        </div>
+        <div class="card" data-at="5" style="left: 872px; top: 192px; width: 360px; height: 376px">
+          <svg id="art-form" width="356" height="212" viewBox="0 0 356 212"></svg>
+          <h3>Sign-up forms made for people</h3>
+          <p>AI assistants can pay, but can't sign up.</p>
+        </div>
+      </section>
+
+      <section class="scene" data-scene="idea">
+        <span class="chapter"><b>2</b>What Sublet does</span>
+        <div class="abs" style="left: 56px; top: 92px; width: 610px">
+          <p class="big" data-at="6" style="font-size: 58px"><span class="red">Sublet:</span> rent out a computer by the minute.</p>
+          <ul class="ticks" style="margin-top: 28px">
+            <li data-at="7">Works like a hotel key card</li>
+            <li data-at="8">Pay only for the minutes you need</li>
+            <li data-at="8@0.55">No key that lasts forever</li>
+            <li data-at="9">AI assistants can rent one too</li>
+          </ul>
+        </div>
+        <div class="abs keycard" data-at="7" style="left: 722px; top: 100px; width: 460px; rotate: -4deg">
+          <div class="kc-band">Key card<span class="kc-chip"></span></div>
+          <div class="kc-row"><span>Opens</span><b>1 computer</b></div>
+          <div class="kc-row"><span>Works until</span><b>2:30 pm</b></div>
+          <div class="kc-row"><span>Time now</span><b id="kc-now">2:28 pm</b></div>
+          <div class="kc-status" id="kc-status">Open</div>
+        </div>
+        <svg id="idea-robot" class="abs" style="left: 1096px; top: 410px" width="100" height="120" viewBox="0 0 100 120"></svg>
+      </section>
+
+      <section class="scene" data-scene="how">
+        <span class="chapter"><b>3</b>How it works</span>
+        <span class="brand">Sublet</span>
+        <div class="card step" id="step1" data-at="10" style="left: 52px; top: 100px; width: 268px; height: 446px">
+          <span class="num">1</span>
+          <svg id="art-s1" data-at="11" width="264" height="206" viewBox="0 0 264 206"></svg>
+          <h3 data-at="11">The owner lists it</h3>
+          <p data-at="11@0.4">One setting. Nothing to install.</p>
+          <p data-at="12@0.3">A price per minute.</p>
+        </div>
+        <div class="card step" id="step2" data-at="10+0.15" style="left: 356px; top: 100px; width: 268px; height: 446px">
+          <span class="num">2</span>
+          <svg id="art-s2" data-at="13" width="264" height="206" viewBox="0 0 264 206"></svg>
+          <h3 data-at="13">A renter pays</h3>
+          <p data-at="13@0.3">They choose the minutes, and pay.</p>
+        </div>
+        <div class="card step" id="step3" data-at="10+0.3" style="left: 660px; top: 100px; width: 268px; height: 446px">
+          <span class="num">3</span>
+          <svg id="art-s3" data-at="14" width="264" height="206" viewBox="0 0 264 206"></svg>
+          <h3 data-at="14@0.3">They get a key card</h3>
+          <p data-at="14@0.55">For that one computer, for exactly that time.</p>
+        </div>
+        <div class="card step" id="step4" data-at="10+0.45" style="left: 964px; top: 100px; width: 268px; height: 446px">
+          <span class="num">4</span>
+          <svg id="art-s4" data-at="15" width="264" height="206" viewBox="0 0 264 206"></svg>
+          <h3 data-at="15">They use it</h3>
+          <p data-at="15@0.4">Just like normal.</p>
+          <p data-at="16@0.3" class="red">When time is up, it locks.</p>
+        </div>
+        <svg id="paycoin" class="abs" width="64" height="64" viewBox="-32 -32 64 64"></svg>
+      </section>
+
+      <section class="scene" data-scene="trust">
+        <span class="chapter"><b>4</b>Who is in charge?</span>
+        <span class="brand">Sublet</span>
+        <div class="abs" style="left: 56px; top: 92px; width: 590px">
+          <p class="big" data-at="18" style="font-size: 52px">Who hands out the key cards?</p>
+          <p class="mid red" data-at="18@0.6" style="margin-top: 12px; font-size: 32px">Not a company. Not one person.</p>
+          <ul class="ticks" style="margin-top: 22px">
+            <li data-at="19">A public network of many computers</li>
+            <li data-at="20">Rules anyone can read</li>
+            <li data-at="20@0.6">Nobody can change them</li>
+            <li data-at="21@0.15">The master key is split into pieces</li>
+          </ul>
+        </div>
+        <svg id="net" class="abs" style="left: 664px; top: 40px" width="580" height="560" viewBox="0 0 580 560"></svg>
+      </section>
+
+      <section class="scene" data-scene="real">
+        <span class="chapter"><b>5</b>Does it really work?</span>
+        <span class="brand">Sublet</span>
+        <p class="big abs" data-at="22" style="left: 56px; top: 84px; font-size: 56px">We tried it for real.</p>
+        <svg id="journey" class="abs" data-at="22@0.3" style="left: 40px; top: 214px" width="1200" height="400" viewBox="0 0 1200 400"></svg>
+      </section>
+
+      <section class="scene" data-scene="end" style="text-align: center">
+        <div class="abs" style="left: 0; right: 0; top: 112px">
+          <p class="wordmark" data-at="25">Sublet</p>
+          <p class="mid" data-at="25@0.3" style="margin-top: 18px">Rent out a computer by the minute.</p>
+          <p class="mid red" data-at="25@0.62" style="margin-top: 6px">No company in the middle.</p>
+          <p class="body soft" data-at="26" style="margin-top: 30px">A NEAR HACKATHON project, running on NEAR's test network</p>
+        </div>
+      </section>
+    </div>
+    <div id="caption"></div>
+
+    <script>
+      // Every face the film uses, so the renderer can load them all before the first frame.
+      window.FONTS = ['400 20px "Archivo Black"', '700 20px Fraunces', '900 20px Fraunces', '400 20px "Source Serif 4"', '600 20px "Source Serif 4"', 'italic 400 20px "Source Serif 4"'];
+
+      const data = window.FILM;
+      const L = data.timeline.lines;
+      const TOTAL = data.timeline.total;
+      window.FILM_LENGTH = TOTAL;
+
+      const $ = (id) => document.getElementById(id);
+      const clamp = (v, lo = 0, hi = 1) => Math.min(hi, Math.max(lo, v));
+      const ease = (p) => p * p * (3 - 2 * p);
+      const backOut = (p) => 1 + 2.7 * (p - 1) ** 3 + 1.7 * (p - 1) ** 2;
+      const lerp = (a, b, p) => a + (b - a) * p;
+      const span = (i) => L[i].end - L[i].start;
+      const at = (i, part = 0) => L[i].start + span(i) * part;
+
+      // The pictures are timed to particular lines, so a changed script has to fail loudly here.
+      const EXPECT = { 0: 'Lots of computers', 2: 'But letting', 6: 'Sublet solves', 10: "Here's how", 17: 'And the money', 18: 'So who', 22: 'We tried', 25: "That's Sublet", 26: "It's a hackathon" };
+      if (L.length !== 27) throw new Error(`The pictures are timed to 27 lines, but the narration has ${L.length}.`);
+      for (const [i, start] of Object.entries(EXPECT)) {
+        if (!L[i].text.startsWith(start)) throw new Error(`Line ${i} should start "${start}", so the pictures would be out of step.`);
+      }
+
+      // What the film shows about the test run comes from the recording, so it cannot drift from it.
+      const recording = data.transcript.lines.map((l) => l.text).join('\n');
+      const ticks = Number((recording.match(/--ticks (\d+)/) ?? [])[1]);
+      const cut = Number((recording.match(/cut in\s+([\d.]+)s/) ?? [])[1]);
+      if (ticks * data.tickSecs !== 120) throw new Error(`The film says two minutes, but the recording rented ${ticks} ticks of ${data.tickSecs}s.`);
+      if (!(cut >= 7.5 && cut <= 12.5)) throw new Error(`The film says about ten seconds, but the key card took ${cut}s.`);
+      if (!/closed by remote host/.test(recording)) throw new Error('The recording does not show the renter being logged out.');
+      if (!/Permission denied/.test(data.transcript.lines.at(-1).text)) throw new Error('The recording does not end with the key card refused.');
+
+      function cue(text) {
+        const match = String(text).match(/^(\d+)(?:@([\d.]+))?(?:\+([\d.]+))?$/);
+        if (!match || !L[Number(match[1])]) throw new Error(`Bad cue "${text}".`);
+        return at(Number(match[1]), Number(match[2] ?? 0)) + Number(match[3] ?? 0);
+      }
+
+      // ---- Drawings. Each is plain shapes in ink, so the film reads like a printed leaflet.
+      const C = { ink: '#1b1915', card: '#fffdf8', deep: '#e8e0cd', screen: '#d8d0bd', gold: '#e3b23c', goldEdge: '#a77a18', red: '#bf2f1b', green: '#2b6a4c', hair: '#b9ae97', tag: '#f4d58d', on: '#cfe3c4', off: '#efd0c6' };
+
+      function monitor(x, y, w, id = '') {
+        const s = Math.max(2.5, w / 32);
+        const h = w * 0.69;
+        const i = w * 0.085;
+        return `<g transform="translate(${x} ${y})">
+          <rect width="${w}" height="${h}" rx="${w * 0.06}" fill="${C.card}" stroke="${C.ink}" stroke-width="${s}"/>
+          <rect${id ? ` id="${id}"` : ''} x="${i}" y="${i}" width="${w - 2 * i}" height="${h - 2 * i}" rx="${w * 0.025}" fill="${C.screen}"/>
+          <path d="M${w * 0.42} ${h} L${w * 0.39} ${w * 0.85} H${w * 0.61} L${w * 0.58} ${h}" fill="${C.deep}" stroke="${C.ink}" stroke-width="${s}" stroke-linejoin="round"/>
+          <path d="M${w * 0.28} ${w * 0.87} H${w * 0.72}" stroke="${C.ink}" stroke-width="${s * 1.25}" stroke-linecap="round"/>
+        </g>`;
+      }
+      const coin = (r) => `<circle r="${r}" fill="${C.gold}" stroke="${C.ink}" stroke-width="${Math.max(3, r / 7)}"/><circle r="${r * 0.6}" fill="none" stroke="${C.goldEdge}" stroke-width="${Math.max(2, r / 10)}"/>`;
+      const person = () => `<circle cy="-58" r="20" fill="${C.deep}" stroke="${C.ink}" stroke-width="4"/><path d="M-36 0 Q-36 -32 0 -32 Q36 -32 36 0 Z" fill="${C.deep}" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>`;
+      const robot = () => `
+        <line x1="50" y1="8" x2="50" y2="26" stroke="${C.ink}" stroke-width="5"/>
+        <circle cx="50" cy="9" r="7" fill="${C.red}" stroke="${C.ink}" stroke-width="3"/>
+        <rect x="8" y="26" width="84" height="60" rx="16" fill="${C.deep}" stroke="${C.ink}" stroke-width="5"/>
+        <circle cx="33" cy="54" r="8" fill="${C.ink}"/><circle cx="67" cy="54" r="8" fill="${C.ink}"/>
+        <path d="M37 71 Q50 79 63 71" fill="none" stroke="${C.ink}" stroke-width="4" stroke-linecap="round"/>
+        <rect x="22" y="92" width="56" height="26" rx="8" fill="${C.deep}" stroke="${C.ink}" stroke-width="5"/>`;
+      const key = () => `
+        <path d="M30 -12 H170 V12 H162 V36 H144 V12 H130 V42 H112 V12 H30 Z" fill="${C.gold}" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+        <circle r="44" fill="${C.gold}" stroke="${C.ink}" stroke-width="5"/>
+        <circle cx="-8" r="14" fill="${C.card}" stroke="${C.ink}" stroke-width="4"/>`;
+      const keycard = (w, h) => `
+        <rect width="${w}" height="${h}" rx="12" fill="${C.card}"/>
+        <path d="M0 28 V12 Q0 0 12 0 H${w - 12} Q${w} 0 ${w} 12 V28 Z" fill="${C.red}"/>
+        <text x="14" y="20" class="t-band">KEY CARD</text>
+        <rect x="16" y="40" width="34" height="26" rx="5" fill="${C.gold}" stroke="${C.ink}" stroke-width="3"/>
+        <rect x="64" y="43" width="${w - 84}" height="8" rx="4" fill="${C.hair}"/>
+        <rect x="64" y="59" width="${(w - 84) * 0.6}" height="8" rx="4" fill="${C.hair}"/>
+        <rect width="${w}" height="${h}" rx="12" fill="none" stroke="${C.ink}" stroke-width="4"/>`;
+      const lock = () => `
+        <path d="M17 30 V20 a13 13 0 0 1 26 0 V30" fill="none" stroke="${C.ink}" stroke-width="6"/>
+        <rect x="6" y="28" width="48" height="36" rx="7" fill="${C.red}" stroke="${C.ink}" stroke-width="4"/>
+        <circle cx="30" cy="43" r="5" fill="${C.card}"/><rect x="28" y="45" width="4" height="10" fill="${C.card}"/>`;
+      const check = (r) => `<circle r="${r}" fill="${C.green}" stroke="${C.ink}" stroke-width="4"/><path d="M${-r * 0.42} ${r * 0.02} L${-r * 0.12} ${r * 0.32} L${r * 0.45} ${-r * 0.3}" fill="none" stroke="#fff8ee" stroke-width="${r * 0.2}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const cross = (r) => `<circle r="${r + 4}" fill="${C.red}"/><path d="M${-r * 0.5} ${-r * 0.5} L${r * 0.5} ${r * 0.5} M${r * 0.5} ${-r * 0.5} L${-r * 0.5} ${r * 0.5}" stroke="#fff8ee" stroke-width="${r * 0.36}" stroke-linecap="round"/>`;
+      const book = () => `
+        <path d="M80 16 Q46 0 6 12 V92 Q46 80 80 96 Z" fill="${C.card}" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+        <path d="M80 16 Q114 0 154 12 V92 Q114 80 80 96 Z" fill="${C.card}" stroke="${C.ink}" stroke-width="5" stroke-linejoin="round"/>
+        ${[34, 50, 66].map((y) => `<path d="M20 ${y} Q46 ${y - 8} 68 ${y}" fill="none" stroke="${C.hair}" stroke-width="4" stroke-linecap="round"/><path d="M92 ${y} Q114 ${y - 8} 140 ${y}" fill="none" stroke="${C.hair}" stroke-width="4" stroke-linecap="round"/>`).join('')}`;
+      const building = () => `
+        <rect x="10" y="34" width="100" height="136" fill="${C.deep}" stroke="${C.ink}" stroke-width="5"/>
+        ${[50, 80, 110].flatMap((y) => [26, 52, 78].map((x) => `<rect x="${x}" y="${y}" width="16" height="20" fill="${C.card}" stroke="${C.ink}" stroke-width="3"/>`)).join('')}
+        <rect x="47" y="142" width="26" height="28" fill="${C.ink}"/>
+        <rect x="0" y="6" width="120" height="32" rx="4" fill="${C.ink}"/>
+        <text x="60" y="28" text-anchor="middle" class="t-sign">COMPANY</text>`;
+      const priceTag = () => `
+        <path d="M20 0 H124 V44 H20 L0 22 Z" fill="${C.tag}" stroke="${C.ink}" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="17" cy="22" r="5" fill="${C.card}" stroke="${C.ink}" stroke-width="2.5"/>
+        <text x="73" y="27" text-anchor="middle" class="t-tag">PER MINUTE</text>`;
+      const stamp = (text, w, cls = '') => `<rect x="${-w / 2}" y="-23" width="${w}" height="46" rx="4" fill="rgba(255,253,248,0.94)" stroke="${C.red}" stroke-width="4"/><text y="8" text-anchor="middle" class="t-stamp ${cls}">${text}</text>`;
+
+      // ---- 1. The problem
+      const idleX = [25, 225, 425];
+      $('idle-art').innerHTML = `
+        <g data-at="0">
+          <g transform="translate(305 96)">
+            <circle r="62" fill="${C.card}" stroke="${C.ink}" stroke-width="5"/>
+            ${Array.from({ length: 12 }, (_, i) => `<line x1="0" y1="-52" x2="0" y2="-43" stroke="${C.ink}" stroke-width="${i % 3 ? 3 : 5}" transform="rotate(${i * 30})"/>`).join('')}
+            <line id="clock-h" x1="0" y1="6" x2="0" y2="-28" stroke="${C.ink}" stroke-width="7" stroke-linecap="round"/>
+            <line id="clock-m" x1="0" y1="8" x2="0" y2="-44" stroke="${C.red}" stroke-width="4" stroke-linecap="round"/>
+            <circle r="6" fill="${C.ink}"/>
+          </g>
+          <path d="M10 424 H600" stroke="${C.ink}" stroke-width="5" stroke-linecap="round"/>
+          ${idleX.map((x) => `${monitor(x, 284, 160)}<text class="t-zzz zzz" x="${x + 80}" y="${284 + 72}" text-anchor="middle">z z z</text>`).join('')}
+        </g>
+        ${idleX.map((x, i) => `<g transform="translate(${x + 80} 228)"><g class="pop" id="idle-coin-${i}">${coin(28)}</g></g>`).join('')}`;
+
+      $('art-key').innerHTML = `
+        <g transform="translate(92 122)">${key()}</g>
+        <g transform="translate(250 50) rotate(-8)"><g class="pop" id="never">${stamp('NEVER EXPIRES', 184)}</g></g>`;
+      $('art-company').innerHTML = `
+        <g transform="translate(56 200) scale(1.25)">${person()}</g>
+        <g transform="translate(118 28)">${building()}</g>
+        <g transform="translate(300 200) scale(1.25)">${person()}</g>`;
+      $('art-form').innerHTML = `
+        <g transform="translate(22 56)">${robot()}</g>
+        <g transform="translate(150 22)">
+          <rect width="186" height="178" rx="10" fill="${C.card}" stroke="${C.ink}" stroke-width="4"/>
+          <text x="18" y="34" class="t-formtitle">Sign up</text>
+          ${['Full name', 'Card number', 'Phone'].map((label, i) => `
+            <text x="18" y="${64 + i * 40}" class="t-field">${label}</text>
+            <rect x="18" y="${70 + i * 40}" width="120" height="18" rx="3" fill="${C.deep}"/>
+            <g transform="translate(160 ${79 + i * 40})"><g class="pop" id="nope-${i}">${cross(11)}</g></g>`).join('')}
+        </g>`;
+
+      // ---- 2. What Sublet does
+      $('idea-robot').innerHTML = `<g class="pop" id="idea-bot">${robot()}</g>`;
+
+      // ---- 3. How it works
+      $('art-s1').innerHTML = `
+        ${monitor(20, 30, 150, 's1-screen')}
+        <g transform="translate(57 62)">
+          <rect id="tg-pill" width="76" height="40" rx="20" fill="${C.hair}" stroke="${C.ink}" stroke-width="4"/>
+          <circle id="tg-knob" cx="20" cy="20" r="14" fill="${C.card}" stroke="${C.ink}" stroke-width="3"/>
+        </g>
+        <g transform="translate(134 140) rotate(-8)"><g class="pop" id="s1-tag">${priceTag()}</g></g>
+        <g transform="translate(222 42)"><g class="pop" id="s1-paid">${coin(20)}<text y="40" text-anchor="middle" class="t-paid">PAID</text></g></g>`;
+      $('art-s2').innerHTML = `
+        <g transform="translate(70 198) scale(1.45)">${person()}</g>
+        <g transform="translate(128 34)"><g class="pop" id="s2-pill">
+          <rect width="122" height="42" rx="21" fill="${C.card}" stroke="${C.ink}" stroke-width="3"/>
+          <text x="61" y="28" text-anchor="middle" class="t-pill">2 minutes</text>
+        </g></g>
+        <g id="s2-coin" transform="translate(186 140)"><g class="pop" id="s2-coin-in">${coin(26)}</g></g>`;
+      $('art-s3').innerHTML = `
+        <g transform="translate(64 60)"><g class="pop" id="s3-check">${check(34)}</g></g>
+        <g data-at="14@0.12"><text x="112" y="54" class="t-pill">Payment</text><text x="112" y="80" class="t-pill">checked</text></g>
+        <g id="s3-card" transform="translate(-220 108)">${keycard(184, 86)}</g>`;
+      $('art-s4').innerHTML = `
+        ${monitor(20, 46, 160, 's4-screen')}
+        <g transform="translate(100 101)"><g class="pop" id="s4-in">${check(26)}</g></g>
+        <g transform="translate(70 69)"><g class="pop" id="s4-lock">${lock()}</g></g>
+        <g transform="translate(224 42)"><circle r="34" fill="${C.card}" stroke="${C.ink}" stroke-width="4"/><text id="timer" y="7" text-anchor="middle" class="t-timer">2:00</text></g>
+        <g transform="translate(108 166) rotate(-9)"><g class="pop" id="s4-stamp">${stamp('LOCKED', 150, 'big-stamp')}</g></g>`;
+      $('paycoin').innerHTML = coin(22);
+
+      // ---- 4. Who is in charge?
+      const nodes = Array.from({ length: 12 }, (_, i) => {
+        const a = ((-90 + i * 30) * Math.PI) / 180;
+        return { a, x: 290 + 215 * Math.cos(a), y: 270 + 215 * Math.sin(a) };
+      });
+      $('net').innerHTML = `
+        <g id="net-lines">
+          <polygon points="${nodes.map((n) => `${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ')}" fill="none" stroke="${C.hair}" stroke-width="3"/>
+          ${nodes.map((n, i) => { const m = nodes[(i + 4) % 12]; return `<line x1="${n.x.toFixed(1)}" y1="${n.y.toFixed(1)}" x2="${m.x.toFixed(1)}" y2="${m.y.toFixed(1)}" stroke="${C.hair}" stroke-width="2" stroke-dasharray="6 8"/>`; }).join('')}
+        </g>
+        ${nodes.map((n, i) => `<g transform="translate(${(n.x - 28).toFixed(1)} ${(n.y - 25).toFixed(1)})"><g class="pop" id="node-${i}">${monitor(0, 0, 56)}</g></g>`).join('')}
+        <g id="rulebook-wrap" transform="translate(212 216)"><g class="pop" id="rulebook">${book()}</g><g transform="translate(116 54)"><g class="pop" id="rulelock">${lock()}</g></g></g>
+        <text id="rule-label" x="290" y="364" text-anchor="middle" class="t-small">THE RULES</text>
+        <g transform="translate(227 270)"><g class="pop" id="master">${key()}</g></g>
+        ${nodes.map((_, i) => `<g id="piece-${i}"><rect x="-10" y="-10" width="20" height="20" rx="3" transform="rotate(45)" fill="${C.gold}" stroke="${C.ink}" stroke-width="3"/></g>`).join('')}`;
+
+      // ---- 5. Does it really work?
+      const X = [150, 450, 750, 1050];
+      const icons = [
+        coin(26),
+        `<g transform="translate(-46 -25) scale(0.5)">${keycard(184, 100)}</g>`,
+        check(30),
+        `<g transform="translate(-27 -30) scale(0.9)">${lock()}</g>`,
+      ];
+      const labels = [['Paid for', '2 minutes'], ['Key card in', `${cut} seconds`], ['We were in', 'with that key card'], ['Logged out', 'right on time']];
+      $('journey').innerHTML = `
+        <g id="bracket">
+          <path d="M${X[1]} 58 V40 H${X[3]} V58" fill="none" stroke="${C.ink}" stroke-width="3"/>
+          <rect x="${X[2] - 70}" y="22" width="140" height="34" fill="${C.card}"/>
+          <text x="${X[2]}" y="46" text-anchor="middle" class="t-small">2 MINUTES</text>
+        </g>
+        <line x1="${X[0]}" y1="130" x2="${X[3]}" y2="130" stroke="${C.hair}" stroke-width="10" stroke-linecap="round"/>
+        <line id="journey-fill" x1="${X[0]}" y1="130" x2="${X[0]}" y2="130" stroke="${C.ink}" stroke-width="10" stroke-linecap="round"/>
+        ${X.map((x, k) => `
+          <g transform="translate(${x} 130)"><g class="pop" id="cp-${k}">
+            <circle id="cp-ring-${k}" r="54" fill="${C.card}" stroke="${C.hair}" stroke-width="6"/>
+            <g id="cp-icon-${k}">${icons[k]}</g>
+          </g></g>
+          <g id="cp-label-${k}">
+            <text x="${x}" y="236" text-anchor="middle" class="t-label">${labels[k][0]}</text>
+            <text x="${x}" y="270" text-anchor="middle" class="t-sub">${labels[k][1]}</text>
+          </g>`).join('')}
+        <text id="refused" x="${X[3]}" y="306" text-anchor="middle" class="t-sub no">Same key card: refused</text>`;
+
+      // ---- Timing
+      const sceneNames = [...new Set(L.map((l) => l.scene))];
+      const scenes = [...document.querySelectorAll('.scene')];
+      const drawn = scenes.map((s) => s.dataset.scene).join(',');
+      if (drawn !== sceneNames.join(',')) throw new Error(`The film draws ${drawn}, but the narration has ${sceneNames.join(',')}.`);
+      const sceneTimes = {};
+      sceneNames.forEach((name, n) => {
+        const first = L.find((l) => l.scene === name);
+        const next = sceneNames[n + 1] ? L.find((l) => l.scene === sceneNames[n + 1]).start - 0.35 : TOTAL + 1;
+        sceneTimes[name] = { from: n === 0 ? 0 : first.start - 0.35, to: next };
+      });
+      const beats = [...document.querySelectorAll('[data-at]')].map((el) => ({
+        el,
+        at: cue(el.dataset.at),
+        svg: el instanceof SVGElement,
+      }));
+      const zzz = [...document.querySelectorAll('.zzz')];
+
+      function pop(el, t, start, dur = 0.38) {
+        const p = clamp((t - start) / dur);
+        el.style.opacity = p > 0 ? Math.min(1, p * 3).toFixed(2) : 0;
+        el.style.transform = `scale(${p > 0 ? backOut(p).toFixed(3) : 0.001})`;
+      }
+      const fade = (t, start, dur = 0.3) => ease(clamp((t - start) / dur));
+      const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+      window.seek = (t) => {
+        for (const scene of scenes) {
+          const { from, to } = sceneTimes[scene.dataset.scene];
+          const on = t >= from && t < to;
+          scene.style.display = on ? 'block' : 'none';
+          if (on) scene.style.opacity = clamp((t - from) / 0.3).toFixed(2);
+        }
+        for (const { el, at: start, svg } of beats) {
+          const p = ease(clamp((t - start) / 0.35));
+          el.style.opacity = p.toFixed(2);
+          if (!svg) el.style.translate = `0 ${((1 - p) * 10).toFixed(1)}px`;
+        }
+
+        // 1. The problem
+        $('clock-m').setAttribute('transform', `rotate(${((t * 240) % 360).toFixed(1)})`);
+        $('clock-h').setAttribute('transform', `rotate(${((120 + t * 20) % 360).toFixed(1)})`);
+        zzz.forEach((el, i) => {
+          const phase = (t * 0.45 + i * 0.37) % 1;
+          el.setAttribute('transform', `translate(0 ${(-phase * 18).toFixed(1)})`);
+          el.style.opacity = Math.sin(phase * Math.PI).toFixed(2);
+        });
+        idleX.forEach((_, i) => pop($(`idle-coin-${i}`), t, at(1, 0.25 + i * 0.12)));
+        pop($('never'), t, at(3, 0.5));
+        [0, 1, 2].forEach((i) => pop($(`nope-${i}`), t, at(5, 0.5 + i * 0.12)));
+
+        // 2. What Sublet does
+        $('kc-now').textContent = t < at(7, 0.45) ? '2:28 pm' : t < at(7, 0.75) ? '2:29 pm' : '2:30 pm';
+        const checkedOut = t >= at(7, 0.78);
+        $('kc-status').textContent = checkedOut ? 'Stopped at checkout' : 'Open';
+        $('kc-status').style.background = checkedOut ? 'var(--stamp)' : 'var(--vacant)';
+        pop($('idea-bot'), t, at(9, 0.1));
+
+        // 3. How it works
+        const stepOn = [[at(11), at(13)], [at(13), at(14)], [at(14), at(15)], [at(15), at(17)]];
+        stepOn.forEach(([a, b], i) => $(`step${i + 1}`).classList.toggle('on', (t >= a && t < b) || (i === 0 && t >= at(17))));
+        const toggle = ease(clamp((t - at(11, 0.3)) / 0.3));
+        $('tg-knob').setAttribute('cx', (20 + toggle * 36).toFixed(1));
+        $('tg-pill').setAttribute('fill', toggle > 0.5 ? C.green : C.hair);
+        pop($('s1-tag'), t, at(12, 0.3));
+        pop($('s2-pill'), t, at(13, 0.15));
+        pop($('s2-coin-in'), t, at(13, 0.3));
+        const flight = ease(clamp((t - at(13, 0.6)) / Math.max(0.35, span(13) * 0.3)));
+        $('s2-coin').setAttribute('transform', `translate(${(186 + flight * 130).toFixed(1)} 140)`);
+        pop($('s3-check'), t, at(14, 0.05));
+        const slide = ease(clamp((t - at(14, 0.3)) / 0.45));
+        $('s3-card').setAttribute('transform', `translate(${(-220 + slide * 260).toFixed(1)} 108)`);
+        const inside = t >= at(15, 0.12);
+        const locked = t >= at(16, 0.35);
+        $('s4-screen').setAttribute('fill', locked ? C.off : inside ? C.on : C.screen);
+        pop($('s4-in'), t, at(15, 0.12));
+        if (locked) $('s4-in').style.opacity = 0;
+        pop($('s4-lock'), t, at(16, 0.35));
+        pop($('s4-stamp'), t, at(16, 0.45));
+        const used = clamp((t - at(15, 0.3)) / (at(16, 0.35) - at(15, 0.3)));
+        $('timer').textContent = clock(Math.ceil(120 * (1 - used)));
+        $('timer').style.fill = locked ? C.red : C.ink;
+        // The rent goes from the renter's step back to the owner's.
+        const payFrom = at(17, 0.05);
+        const payTime = Math.max(0.6, span(17) * 0.6);
+        const pay = ease(clamp((t - payFrom) / payTime));
+        const [x0, y0, cx, cy, x1, y1] = [544, 242, 410, 12, 276, 144];
+        const px = (1 - pay) ** 2 * x0 + 2 * (1 - pay) * pay * cx + pay ** 2 * x1;
+        const py = (1 - pay) ** 2 * y0 + 2 * (1 - pay) * pay * cy + pay ** 2 * y1;
+        $('paycoin').style.left = `${(px - 32).toFixed(1)}px`;
+        $('paycoin').style.top = `${(py - 32).toFixed(1)}px`;
+        $('paycoin').style.opacity = t >= payFrom && pay < 1 ? 1 : 0;
+        pop($('s1-paid'), t, payFrom + payTime - 0.05);
+
+        // 4. Who is in charge?
+        nodes.forEach((n, i) => {
+          pop($(`node-${i}`), t, at(19, 0.05) + i * 0.06, 0.3);
+          const start = at(21, 0.42) + i * 0.015;
+          const p = ease(clamp((t - start) / 0.5));
+          const r = 168 * p;
+          const piece = $(`piece-${i}`);
+          piece.setAttribute('transform', `translate(${(290 + r * Math.cos(n.a)).toFixed(1)} ${(270 + r * Math.sin(n.a)).toFixed(1)}) rotate(${(p * 180).toFixed(0)})`);
+          piece.style.opacity = t >= start ? 1 : 0;
+        });
+        $('net-lines').style.opacity = fade(t, at(19, 0.4), 0.5).toFixed(2);
+        const bookGone = fade(t, at(21, 0));
+        pop($('rulebook'), t, at(20, 0.02));
+        pop($('rulelock'), t, at(20, 0.6));
+        $('rulebook-wrap').style.opacity = (1 - bookGone).toFixed(2);
+        $('rule-label').style.opacity = (fade(t, at(20, 0.1)) * (1 - bookGone)).toFixed(2);
+        pop($('master'), t, at(21, 0.1));
+        if (t >= at(21, 0.42)) $('master').style.opacity = (1 - clamp((t - at(21, 0.42)) / 0.15)).toFixed(2);
+
+        // 5. Does it really work?
+        const reach = [at(22, 0.62), at(23, 0.3), at(23, 0.72), at(24, 0.3)];
+        const legs = [[at(23, 0), reach[1]], [at(23, 0.42), reach[2]], [at(24, 0), reach[3]]];
+        let fillX = X[0];
+        legs.forEach(([a, b], k) => { if (t >= a) fillX = lerp(X[k], X[k + 1], ease(clamp((t - a) / (b - a)))); });
+        $('journey-fill').setAttribute('x2', fillX.toFixed(1));
+        $('journey-fill').style.opacity = t >= legs[0][0] ? 1 : 0;
+        const ring = [C.ink, C.ink, C.green, C.red];
+        reach.forEach((r, k) => {
+          const done = t >= r;
+          $(`cp-ring-${k}`).setAttribute('stroke', done ? ring[k] : C.hair);
+          $(`cp-icon-${k}`).style.opacity = done ? 1 : 0.22;
+          const bump = clamp((t - r) / 0.3);
+          $(`cp-${k}`).style.transform = `scale(${(done ? 1 + 0.12 * Math.sin(bump * Math.PI) : 1).toFixed(3)})`;
+          $(`cp-label-${k}`).style.opacity = fade(t, r).toFixed(2);
+        });
+        $('bracket').style.opacity = fade(t, at(24, 0)).toFixed(2);
+        $('refused').style.opacity = fade(t, at(24, 0.68)).toFixed(2);
+
+        const line = L.find((l) => t >= l.start - 0.05 && t < l.end + 0.22);
+        $('caption').textContent = line ? line.text : '';
+      };
+
+      // Only what is on screen decides whether a frame needs drawing again.
+      window.frameState = () => {
+        const shown = scenes.find((s) => s.style.display === 'block');
+        const html = (shown ? shown.outerHTML : '') + $('caption').textContent;
+        let hash = 2166136261;
+        for (let i = 0; i < html.length; i += 1) hash = Math.imul(hash ^ html.charCodeAt(i), 16777619);
+        return `${shown?.dataset.scene}:${html.length}:${hash >>> 0}`;
+      };
+      window.seek(0);
+    </script>
+  </body>
+</html>

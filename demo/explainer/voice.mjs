@@ -1,24 +1,27 @@
 // Turns script.json into one narration track and a timeline the film follows, so pictures and voice
 // stay in step. The voice is Kokoro, an Apache 2.0 model that runs on this machine.
 //   node voice.mjs [voice] [dtype]
+//   FILM=simple node voice.mjs      the film in ./simple instead of the original explainer
+//   SPEED=1.0 node voice.mjs        a slower or faster voice
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { KokoroTTS } from 'kokoro-js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const filmDir = path.join(here, process.env.FILM ?? '');
 const voice = process.argv[2] ?? 'af_heart';
 const dtype = process.argv[3] ?? 'fp32';
-const out = path.join(here, 'out');
+const out = path.join(filmDir, 'out');
 fs.mkdirSync(out, { recursive: true });
 
-const script = JSON.parse(fs.readFileSync(path.join(here, 'script.json'), 'utf8'));
+const script = JSON.parse(fs.readFileSync(path.join(filmDir, 'script.json'), 'utf8'));
 
 const LEAD_IN = 0.7;
 const BETWEEN_LINES = 0.3;
 const BETWEEN_SCENES = 0.8;
 const TAIL = 1.6;
-const SPEED = 1.04;
+const SPEED = Number(process.env.SPEED ?? 1.04);
 
 /**
  * Written forms the voice would misread. Captions keep the written form. AWS and AI are left out on

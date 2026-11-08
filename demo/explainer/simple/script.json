@@ -1,0 +1,43 @@
+[
+  { "scene": "idle", "lines": [
+    "Lots of computers sit switched on, doing nothing, for most of the day.",
+    "Their owners could rent them out, even for a few minutes, and earn some money."
+  ] },
+  { "scene": "risky", "lines": [
+    "But letting a stranger use your computer is hard, and it feels risky.",
+    "You would have to give them a key, and that key keeps working until you remember to take it back.",
+    "Or you would have to trust a company in the middle, and install its software.",
+    "And AI assistants can now pay for things, but sign-up forms are made for people."
+  ] },
+  { "scene": "idea", "lines": [
+    "Sublet solves this. It lets anyone rent out a computer by the minute.",
+    "It works like a hotel key card. It opens one room, and it stops working at checkout.",
+    "The renter pays only for the minutes they need, and nobody gets a key that lasts forever.",
+    "And an AI assistant can rent a computer too, all by itself."
+  ] },
+  { "scene": "how", "lines": [
+    "Here's how it works.",
+    "First, the owner changes one setting on their computer. There's nothing to install.",
+    "Then they put it up for rent, with a price per minute.",
+    "A renter chooses how many minutes they want, and pays.",
+    "The payment is checked, and the renter gets a key card for that one computer, for exactly that time.",
+    "They log in and use it, just like normal.",
+    "When the time is up, the key card stops working, and they are logged out automatically.",
+    "And the money goes to the owner."
+  ] },
+  { "scene": "trust", "lines": [
+    "So who checks the payment and hands out the key cards? Not a company, and not one person.",
+    "It's done by NEAR, a public network run by many computers around the world.",
+    "The rules are written where anyone can read them, and nobody can change them.",
+    "Even the master key that makes the key cards is split into pieces, so no one can make one on their own."
+  ] },
+  { "scene": "real", "lines": [
+    "We tried it for real, on a test computer. We paid for two minutes.",
+    "The key card arrived in about ten seconds, and we were in.",
+    "Two minutes later, we were logged out, right on time, and the same key card no longer worked."
+  ] },
+  { "scene": "end", "lines": [
+    "That's Sublet. Rent out a computer by the minute, with no company in the middle.",
+    "It's a hackathon project, running on NEAR's test network."
+  ] }
+]

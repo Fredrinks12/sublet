@@ -2,6 +2,7 @@
 // the voice, and every claim is checked against real data before a frame is drawn.
 //   node render.mjs <out.mp4>           the whole film
 //   node render.mjs --stills 3,20,40    a few frames, for checking the layout
+//   FILM=simple node render.mjs         the film in ./simple instead of the original explainer
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -12,15 +13,17 @@ import puppeteer from 'puppeteer-core';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
+const filmName = process.env.FILM ?? 'explainer';
+const filmDir = path.join(here, process.env.FILM ?? '');
 const FPS = 24;
 
 const stillsAt = process.argv.indexOf('--stills');
 const stills = stillsAt >= 0 ? process.argv[stillsAt + 1].split(',').map(Number) : null;
-const out = stillsAt >= 0 ? null : process.argv[2] ?? path.join(here, 'out', 'sublet-explainer.mp4');
-const stillsDir = process.env.STILLS ?? path.join(here, 'out', 'stills');
+const out = stillsAt >= 0 ? null : process.argv[2] ?? path.join(filmDir, 'out', `sublet-${filmName}.mp4`);
+const stillsDir = process.env.STILLS ?? path.join(filmDir, 'out', 'stills');
 
 const read = (...parts) => JSON.parse(fs.readFileSync(path.join(...parts), 'utf8'));
-const timeline = read(here, 'out', 'timeline.json');
+const timeline = read(filmDir, 'out', 'timeline.json');
 const transcript = read(root, 'demo', 'transcript.json');
 const lab = read(root, 'docs', 'attack-lab-results.json');
 
@@ -48,14 +51,18 @@ async function accessKeyCount() {
 
 // The narration states these as facts, so the film refuses to render if they stop being true.
 const spokenText = timeline.lines.map((l) => l.text).join(' ');
-if (lab.stopped !== 37 || lab.total !== 37 || !spokenText.includes('thirty-seven')) {
+const saysAttacks = spokenText.includes('thirty-seven');
+if (!saysAttacks && filmName === 'explainer') throw new Error('The explainer must say how many attacks were stopped.');
+if (saysAttacks && (lab.stopped !== 37 || lab.total !== 37)) {
   throw new Error(`The script says thirty-seven attacks, but the results say ${lab.stopped} of ${lab.total}.`);
 }
 const keys = await accessKeyCount();
-if (keys !== 0 || !spokenText.includes('zero access keys')) throw new Error(`The script says zero keys, but the chain says ${keys}.`);
+const saysLocked = /zero access keys|nobody can change/.test(spokenText);
+if (!saysLocked && filmName === 'explainer') throw new Error('The explainer must say the contract has zero keys.');
+if (saysLocked && keys !== 0) throw new Error(`The script says nobody can change the contract, but the chain shows ${keys} keys.`);
 const unit = await rpcView('get_unit', { id: 'debian-vm' });
 const trustLine = `${unit.ca_public_key.slice(0, 19)}... sublet:debian-vm`;
-const film = { timeline, transcript, attacks: lab.stopped, keys, trustLine };
+const film = { timeline, transcript, attacks: lab.stopped, keys, trustLine, tickSecs: unit.terms.tick_secs };
 console.log(`checked: ${lab.stopped} attacks stopped, ${keys} keys, ${timeline.total.toFixed(1)}s long`);
 
 const browser = await puppeteer.launch({
@@ -64,12 +71,15 @@ const browser = await puppeteer.launch({
   args: ['--no-first-run', '--disable-gpu'],
 });
 const page = await browser.newPage();
+// A film checks its own facts and throws if one is wrong, so its errors must reach the console.
+page.on('pageerror', (error) => console.error(`film: ${error.message}`));
 await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1.5 });
 await page.evaluateOnNewDocument((data) => { window.FILM = data; }, film);
-await page.goto(pathToFileURL(path.join(here, 'film.html')).href, { waitUntil: 'networkidle2', timeout: 60_000 });
+await page.goto(pathToFileURL(path.join(filmDir, 'film.html')).href, { waitUntil: 'networkidle2', timeout: 60_000 });
 // Hidden scenes do not load their fonts until shown, which would flash a fallback mid-film.
 await page.evaluate(async () => {
-  const faces = ['400 20px "Archivo Black"', '700 20px Fraunces', '900 20px Fraunces', '400 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"', '400 20px "Source Serif 4"', '600 20px "Source Serif 4"'];
+  if (typeof window.seek !== 'function') throw new Error('The film did not start. Its own error is printed above.');
+  const faces = window.FONTS ?? ['400 20px "Archivo Black"', '700 20px Fraunces', '900 20px Fraunces', '400 20px "IBM Plex Mono"', '600 20px "IBM Plex Mono"', '400 20px "Source Serif 4"', '600 20px "Source Serif 4"'];
   await Promise.all(faces.map((face) => document.fonts.load(face, 'Sublet TO LET')));
   await document.fonts.ready;
 });
@@ -85,7 +95,7 @@ if (stills) {
   process.exit(0);
 }
 
-const silent = path.join(os.tmpdir(), `sublet-explainer-${process.pid}.mp4`);
+const silent = path.join(os.tmpdir(), `sublet-${filmName}-${process.pid}.mp4`);
 const encoder = spawn(ffmpeg, [
   '-y', '-loglevel', 'error',
   '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
@@ -104,6 +114,8 @@ let reported = -1;
 for (let i = 0; i < frames; i += 1) {
   const state = await page.evaluate((t) => {
     window.seek(t);
+    // A film can say for itself what is on screen, so nothing it animates is missed.
+    if (typeof window.frameState === 'function') return window.frameState();
     return document.getElementById('stage').innerHTML.length + document.getElementById('caption').textContent
       + [...document.querySelectorAll('.scene, [data-at], .token, .cert, .line-h, .line-v, .sealed, .dot, .node, #lease span, #held')]
         .map((el) => el.style.cssText + el.className).join('|');
@@ -128,7 +140,7 @@ await browser.close();
 await new Promise((resolve, reject) => {
   const mix = spawn(ffmpeg, [
     '-y', '-loglevel', 'error',
-    '-i', silent, '-i', path.join(here, 'out', 'voice.wav'),
+    '-i', silent, '-i', path.join(filmDir, 'out', 'voice.wav'),
     '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,aresample=44100',
     '-c:v', 'copy', '-c:a', 'aac', '-b:a', '128k', '-ac', '2', '-shortest', '-movflags', '+faststart', out,
   ], { stdio: 'inherit' });
