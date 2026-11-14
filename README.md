@@ -7,8 +7,9 @@ Built at NEAR HACKATHON, in the Open Innovation track. Testnet only and unaudite
 | | |
 | --- | --- |
 | Contract | [`sublet.testnet`](https://testnet.nearblocks.io/address/sublet.testnet) |
-| Website | Add the hosted URL here before submitting |
-| Demo video | Add the X post here before submitting |
+| Website | [fredrinks12.github.io/sublet](https://fredrinks12.github.io/sublet/), static, reads the live contract |
+| Demo video | [media/demo-video.mp4](media/demo-video.mp4): one real lease, from paying to being logged out (68 s, no sound) |
+| Explainers | [In plain words](media/plain-words-video.mp4) (2:19) and [technical](media/explainer-video.mp4) (2:15), both with voice and captions |
 
 ## The problem
 
@@ -75,11 +76,13 @@ You should see `test result: ok. 97 passed`. One test reproduces a hash the live
 
 ### Rent a machine on the website
 
+Open [fredrinks12.github.io/sublet](https://fredrinks12.github.io/sublet/), or run it locally:
+
 ```sh
 cd web && npm ci && npm run dev
 ```
 
-Open the page, choose **Rent** on a listing, and confirm. A free testnet account and an SSH key are made in your browser. You should see **Your key is cut**, a countdown, and commands to paste into a terminal. The site has no backend.
+Choose **Rent** on a listing, and confirm. A free testnet account and an SSH key are made in your browser. You should see **Your key is cut**, a countdown, and commands to paste into a terminal. The site has no backend.
 
 The only listing today, `debian-vm`, is a test machine on a private address, so the key is real but those commands will not connect from your computer. To see a real login, run `scripts/judge.mjs` above.
 
@@ -167,6 +170,8 @@ These are the short answers. [docs/THREAT-MODEL.md](docs/THREAT-MODEL.md) has th
 | [examples/](examples/) | An agent that rents a machine to do a job |
 | [scripts/](scripts/) | The judge run, the Attack Lab and the evidence verifier |
 | [docs/](docs/) | The threat model and evidence |
+| [media/](media/) | The demo video and the two explainers |
+| [demo/](demo/) | The scripts that render those videos from the recorded lease |
 
 ## Limits
 
